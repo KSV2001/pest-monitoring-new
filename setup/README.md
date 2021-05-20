@@ -9,7 +9,7 @@ git clone https://github.com/WadhwaniAI/pest-monitoring-new.git
 git clone https://github.com/facebookresearch/detectron2.git detectron2_repo
 ```
 
-#### 2. Setting up Docker Image
+#### 2. Setting up Docker Image (skip if on sif or thor)
 If the docker image is not present, 
 ```bash
 cd ~/projects/pest-monitoring-new/setup/
