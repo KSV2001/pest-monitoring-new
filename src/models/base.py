@@ -1,6 +1,10 @@
+import hydra
+from torch.optim.optimizer import Optimizer
+
+from omegaconf import DictConfig
 import numpy as np
 import torch
-import torch.nn as nn
+from torch import nn
 import pytorch_lightning as pl
 
 class Model(pl.LightningModule):
@@ -9,26 +13,16 @@ class Model(pl.LightningModule):
     :param config: Config object
     :type config: Config
     """
-    def __init__(self, config):
-        super().__init__()
-        self.setup_configs(config)
-        self.setup_network()
+    def __init__(self, model_config: DictConfig, network: nn.Module, optimizer: Optimizer):
+        super().__init__() 
+        nn.Module: self.network = hydra.utils.instantiate(model_config.network)
     
-    def _setup_configs(self, config):
-        self.network_config = config.network
-        self.model_config = config.model
-
-    def _setup_network(self):
-        # TODO : Insert Network 
-
-    def _setup_optimizers(self, model_config):
-        return None
-
-    def forward(self):
-        raise NotImplementedError
+    def forward(self, x):
+        return self.network(x) 
 
     def configure_optimizers(self):
-        return _setup_optimizers(self.model_config)        
+        Optimizer: optimizer = hydra.utils.instantiate(model_config.optimizer, params = self.parameters())
+        return optimizer      
         
     def training_step(self, batch, batch_idx):
         return None

@@ -1,6 +1,8 @@
 from typing import List, Optional
+from torch.optim.optimizer import Optimizer
 
 import hydra
+from torch import nn
 from omegaconf import DictConfig
 from pytorch_lightning import (
     Callback,
@@ -34,7 +36,7 @@ def train(config: DictConfig) -> Optional[float]:
 
     # Init Lightning model
     log.info(f"Instantiating model <{config.model._target_}>")
-    model: LightningModule = hydra.utils.instantiate(config.model)
+    model: LightningModule = hydra.utils.instantiate(config.model,  model_config = config.model, _recursive_=False)
 
     # Init Lightning callbacks
     callbacks: List[Callback] = []
