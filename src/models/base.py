@@ -12,9 +12,8 @@ class Model(pl.LightningModule):
     def __init__(self, config):
         super().__init__()
         self.setup_configs(config)
-
         self.setup_network()
-        
+    
     def _setup_configs(self, config):
         self.network_config = config.network
         self.model_config = config.model
@@ -24,6 +23,9 @@ class Model(pl.LightningModule):
 
     def _setup_optimizers(self, model_config):
         return None
+
+    def forward(self):
+        raise NotImplementedError
 
     def configure_optimizers(self):
         return _setup_optimizers(self.model_config)        
