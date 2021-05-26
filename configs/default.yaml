@@ -1,0 +1,51 @@
+# @package _global_
+
+# to execute this experiment run:
+# python run.py experiment=default.yaml
+
+seed: 12345
+
+trainer:
+  _target_: pytorch_lightning.Trainer
+  gpus: 0
+  min_epochs: 1
+  max_epochs: 10
+  gradient_clip_val: 0.5
+  accumulate_grad_batches: 2
+  weights_summary: null
+
+model:
+  _target_: src.models.base.Model
+  network:
+    _target_: src.networks.detectron2network.Detectron2Network
+    config_path: "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
+    trained: false
+  optimizer:
+    _target_: torch.optim.SGD
+    lr: 0.01
+    momentum: 0.9
+
+datamodule:
+  _target_: src.data.trial.mnist_datamodule.MNISTDataModule
+  data_dir: ".."
+  batch_size: 64
+  train_val_test_split: [55_000, 5_000, 10_000]
+  num_workers: 0
+  pin_memory: False
+
+callbacks:
+  model_checkpoint:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    monitor: None
+    mode: "max"
+    dirpath: "checkpoints/"
+    filename: "sample-mnist-{epoch:02d}"
+
+logger:
+  wandb:
+    tags: ["best_model", "uwu"]
+    notes: "Description of this model."
+  neptune:
+    tags: ["best_model"]
+  csv_logger:
+    save_dir: "."
