@@ -1,10 +1,11 @@
 import hydra
-from torch.optim.optimizer import Optimizer
 
 from omegaconf import DictConfig
 import numpy as np
 import torch
 from torch import nn
+from torch.nn import Module
+from torch.optim.optimizer import Optimizer
 import pytorch_lightning as pl
 
 class Model(pl.LightningModule):
@@ -13,9 +14,10 @@ class Model(pl.LightningModule):
     :param config: Config object
     :type config: Config
     """
-    def __init__(self, model_config: DictConfig, network: nn.Module, optimizer: Optimizer):
+    def __init__(self, model_config: DictConfig, network: Module, optimizer: Optimizer, loss: Module):
         super().__init__() 
-        nn.Module: self.network = hydra.utils.instantiate(model_config.network)
+        Module: self.network = hydra.utils.instantiate(model_config.network)
+        Module: self.criterion = hydra.utils.instantiate(model_config.loss)
     
     def forward(self, x):
         return self.network(x) 
