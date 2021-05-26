@@ -30,6 +30,10 @@ model:
     momentum: 0.9
   loss:
     _target_: torch.nn.CrossEntropyLoss
+  metrics:
+    - _target_: torchmetrics.Accuracy
+    - _target_: torchmetrics.Precision
+      num_classes: 3
 
 datamodule:
   _target_: src.data.trial.mnist_datamodule.MNISTDataModule
