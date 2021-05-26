@@ -4,6 +4,7 @@ from torch.optim.optimizer import Optimizer
 import hydra
 from torch import nn
 from omegaconf import DictConfig
+import pytorch_lightning as pl
 from pytorch_lightning import (
     Callback,
     LightningDataModule,
@@ -52,7 +53,9 @@ def train(config: DictConfig) -> Optional[float]:
         for _, lg_conf in config["logger"].items():
             if "_target_" in lg_conf:
                 log.info(f"Instantiating logger <{lg_conf._target_}>")
-                logger.append(hydra.utils.instantiate(lg_conf))
+                if lg_conf._target_ == 'pytorch_lightning.loggers.wandb.WandbLogger':
+                    logger.append(hydra.utils.instantiate(lg_conf, name = config.run_name))
+                else: logger.append(hydra.utils.instantiate(lg_conf))    
 
     # Init Lightning trainer
     log.info(f"Instantiating trainer <{config.trainer._target_}>")
