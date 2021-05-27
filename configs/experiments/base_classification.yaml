@@ -45,7 +45,7 @@ callbacks:
   model_checkpoint:
     _target_: pytorch_lightning.callbacks.ModelCheckpoint
     monitor: "val/loss"
-    mode: "max"
+    mode: "min"
     dirpath: "checkpoints/"
     filename: "sample-mnist-{epoch:02d}"
 
