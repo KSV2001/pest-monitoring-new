@@ -11,7 +11,7 @@ hydra:
 
 trainer:
   _target_: pytorch_lightning.Trainer
-  gpus: 0
+  gpus: 1
   min_epochs: 1
   max_epochs: 10
   gradient_clip_val: 0.5
@@ -21,9 +21,7 @@ trainer:
 model:
   _target_: src.models.base.Model
   network:
-    _target_: src.networks.detectron2network.Detectron2Network
-    config_path: "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
-    trained: false
+    _target_: src.networks.trial.modules.simple_dense_net.ConvNet
   optimizer:
     _target_: torch.optim.SGD
     lr: 0.01
@@ -33,11 +31,11 @@ model:
   metrics:
     - _target_: torchmetrics.Accuracy
     - _target_: torchmetrics.Precision
-      num_classes: 3
+      num_classes: 10    
 
 datamodule:
   _target_: src.data.trial.mnist_datamodule.MNISTDataModule
-  data_dir: "data/"
+  data_dir: "/output/data/"
   batch_size: 64
   train_val_test_split: [55_000, 5_000, 10_000]
   num_workers: 0
@@ -46,7 +44,7 @@ datamodule:
 callbacks:
   model_checkpoint:
     _target_: pytorch_lightning.callbacks.ModelCheckpoint
-    monitor: None
+    monitor: "val/loss"
     mode: "max"
     dirpath: "checkpoints/"
     filename: "sample-mnist-{epoch:02d}"
@@ -56,4 +54,3 @@ logger:
     _target_: pytorch_lightning.loggers.wandb.WandbLogger
     project: "pest-monitoring-new"
     notes: "Description of this model."
-    save_dir: "/output/"

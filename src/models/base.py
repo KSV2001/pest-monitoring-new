@@ -1,9 +1,11 @@
 import hydra
 
 from omegaconf import DictConfig
+from typing import List, Optional, Any
 import numpy as np
 import torch
 from torch import nn
+import torch.nn.functional as F
 from torch.nn import Module
 from torch.optim.optimizer import Optimizer
 import pytorch_lightning as pl
@@ -17,41 +19,41 @@ class Model(pl.LightningModule):
     """
     def __init__(self, model_config: DictConfig, **kwargs):
         super().__init__() 
-        Module: self.network = hydra.utils.instantiate(model_config.network)
-        Module: self.criterion = hydra.utils.instantiate(model_config.loss)
+        self.model_config = model_config
+
+        self.network: Module = hydra.utils.instantiate(self.model_config.network)
+        self.criterion: Module = hydra.utils.instantiate(self.model_config.loss)
+
         metrics = MetricCollection([
-            hydra.utils.instantiate(metric) for metric in model_config.metrics
+            hydra.utils.instantiate(metric) for metric in self.model_config.metrics
         ])
-        self.train_metrics = metrics.clone(prefix='train_')
-        self.valid_metrics = metrics.clone(prefix='val_')
+        self.train_metrics = metrics.clone(prefix='train/')
+        self.valid_metrics = metrics.clone(prefix='val/')
     
     def forward(self, x):
         return self.network(x) 
 
     def configure_optimizers(self):
-        Optimizer: optimizer = hydra.utils.instantiate(model_config.optimizer, params = self.parameters())
+        optimizer: Optimizer = hydra.utils.instantiate(self.model_config.optimizer, params = self.parameters())
         return optimizer      
-        
-    def training_step(self, batch, batch_idx):
+    
+    def step(self, batch: Any):
         x, y = batch
-        preds = self.network(x)
-        output = self.train_metrics(preds, y)
-        self.log_dict(output)
+        out = self.forward(x)
+        loss = self.criterion(out, y)
+        return loss, out, y
 
-    def training_step_end(self, batch_parts):
-        return None
+    def training_step(self, batch, batch_idx):
+        loss, out, y = self.step(batch)
 
-    def training_epoch_end(self, training_step_outputs):
-        return None 
+        output = self.train_metrics(F.softmax(out, -1), y)
+        self.log('train/loss', loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log_dict(output, on_step=False, on_epoch=True, logger=True)
+        return loss
 
     def validation_step(self, batch, batch_idx):
-        x, y = batch
-        preds = self.network(x)
-        output = self.train_metrics(preds, y)
-        self.log_dict(output)
+        loss, out, y = self.step(batch)
 
-    def validation_step_end(self, batch_parts):
-        return None
-
-    def validation_epoch_end(self, validation_step_outputs):
-        return None
+        output = self.valid_metrics(F.softmax(out, -1), y)
+        self.log('val/loss', loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log_dict(output, on_step=False, on_epoch=True)

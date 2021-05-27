@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Any
 from torch.optim.optimizer import Optimizer
 
 import os
