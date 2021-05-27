@@ -39,7 +39,12 @@ RUN python -m pip install 'git+https://github.com/facebookresearch/detectron2.gi
 ENV FVCORE_CACHE="/tmp"
 WORKDIR /workspace/pest-monitoring-new
 
+# set the PYTHONPATH required for using the repository
+ENV PYTHONPATH /workspace/pest-monitoring-new
+
 # install from requirements.txt
 COPY requirements.txt /tmp/
 RUN pip install --requirement /tmp/requirements.txt
 COPY . /tmp/
+
+

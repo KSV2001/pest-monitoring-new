@@ -40,6 +40,7 @@ NV_GPU=$gpu taskset --cpu-list $cpulist nvidia-docker run --rm -it \
 	-v /home/users/:/users/ \
 	-v /scratchh/home/"$user"/:/output \
 	-v ~/.gitconfig:/etc/gitconfig \
+	-w /workspace/pest-monitoring-new \
 	-p $port:$port \
 	--ipc host \
 	--env WANDB_DOCKER=$image \
