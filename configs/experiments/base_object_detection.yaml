@@ -1,0 +1,73 @@
+# @package _global_
+
+# to execute this experiment run:
+# python run.py experiment=default.yaml
+
+seed: 12345
+
+hydra:
+  run:
+    dir: /output/${hydra.job.config_name}_${now:%m-%d_%H-%M}
+
+trainer:
+  _target_: pytorch_lightning.Trainer
+  gpus: 0
+  min_epochs: 1
+  max_epochs: 10
+  gradient_clip_val: 0.5
+  accumulate_grad_batches: 2
+  weights_summary: null
+
+model:
+  _target_: src.models.base.Model
+  network:
+    _target_: src.networks.detectron2network.Detectron2Network
+    config_path: "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
+    trained: false
+  optimizer:
+    _target_: torch.optim.SGD
+    lr: 0.01
+    momentum: 0.9
+  loss:
+    _target_: torch.nn.CrossEntropyLoss
+  metrics:
+    - _target_: torchmetrics.Accuracy
+    - _target_: torchmetrics.Precision
+      num_classes: 3
+
+datamodule:
+  _target_: src.data.baseDataModule.DetectionDataModule
+  num_workers: 16
+  batch_size: 1
+  shuffle: True
+  drop_last: True
+  pin_memory: True
+  img_size: 512
+  dataset:
+    _target_: src.data.baseDataset.GeneralizedDataset
+    IMG_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/images/"
+    SPLIT_FILE: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/"
+    BOX_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/annot/"
+    VAL_FILE: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/img_val_file.csv"
+    label_map: 
+      trap: 0
+      non_trap: 1
+    transforms: 
+      train: null
+      val: null
+      test: null  
+
+callbacks:
+  model_checkpoint:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    monitor: None
+    mode: "max"
+    dirpath: "checkpoints/"
+    filename: "sample-mnist-{epoch:02d}"
+
+logger:
+  wandb:
+    _target_: pytorch_lightning.loggers.wandb.WandbLogger
+    project: "pest-monitoring-new"
+    notes: "Description of this model."
+    save_dir: "/output/"
