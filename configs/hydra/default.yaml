@@ -1,0 +1,4 @@
+# output path from experiment outputs
+hydra:
+  run:
+    dir: /output/${hydra.job.config_name}_${now:%m-%d_%H-%M}
