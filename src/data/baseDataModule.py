@@ -7,16 +7,16 @@ from omegaconf import DictConfig
 from torch.utils.data import DataLoader, Dataset
 from pytorch_lightning import LightningDataModule
 from torchvision import transforms
+from .baseCollate import default_collate
+from .augmentations import *
 
-class DetectionDataModule(LightningDataModule):
+class baseDataModule(LightningDataModule):
     """
     Standard MNIST, train, val, test splits and transforms
 
-    >>> MNISTDataModule()  # doctest: +ELLIPSIS
-    <...mnist_datamodule.MNISTDataModule object at ...>
     """
 
-    name = "detection"
+    name = "base"
 
     def __init__(
         self,
@@ -27,7 +27,6 @@ class DetectionDataModule(LightningDataModule):
         shuffle: bool = True,
         drop_last: bool = True,
         pin_memory: bool = True,
-        img_size: int = 512,
         *args,
         **kwargs,
     ):
@@ -51,11 +50,10 @@ class DetectionDataModule(LightningDataModule):
         self.drop_last = drop_last
         self.pin_memory = pin_memory
 
-        self.sampler = None if "sampler" not in kwargs else kwargs["sampler"]
-#         self.collate_fn = self.default_collate_fn if "collate_fn" not in kwargs else kwargs["collate_fn"]
-        self.collate_fn = None #temporary
-        self.img_size = (512, 512)
+        self.sampler = None if "sampler" not in kwargs else kwargs["sampler"]  # Take sampler as a input in config file
+        self.collate_fn = default_collate if "collate_fn" not in self.data_config else self.data_config.collate_fn
 
+        
         self.train_transforms = self.default_transforms if self.data_config.dataset.transforms.train is None \
                                 else transforms.Compose([hydra.utils.instantiate(transform) for transform in self.data_config.dataset.transforms.train])
         self.val_transforms = self.default_transforms if self.data_config.dataset.transforms.train is None \
@@ -72,12 +70,12 @@ class DetectionDataModule(LightningDataModule):
         """Split the train and valid dataset"""
         self.dataset_train: Dataset = hydra.utils.instantiate(self.data_config.dataset,
                                                              dataset_config = self.data_config.dataset,
-                                                             SPLIT_FILE = os.path.join(self.data_config.dataset.SPLIT_FILE, 'train.txt'),
+                                                             mode = 'train',
                                                              transforms = self.train_transforms,
                                                               _recursive_=False)
         self.dataset_val: Dataset = hydra.utils.instantiate(self.data_config.dataset,
                                                             dataset_config = self.data_config.dataset,
-                                                            SPLIT_FILE = os.path.join(self.data_config.dataset.SPLIT_FILE, 'val.txt'),
+                                                            mode = 'val',
                                                             transforms = self.val_transforms,
                                                              _recursive_=False)
         
@@ -113,7 +111,7 @@ class DetectionDataModule(LightningDataModule):
         """MNIST test set uses the test split"""
         self.dataset_test: Dataset = hydra.utils.instantiate(self.data_config.dataset,
                                                             dataset_config = self.data_config.dataset,
-                                                            SPLIT_FILE = os.path.join(self.data_config.dataset.SPLIT_FILE, 'test.txt'),
+                                                            mode = 'test',
                                                             transforms = self.test_transforms,
                                                              _recursive_=False)
         loader = DataLoader(
@@ -131,7 +129,7 @@ class DetectionDataModule(LightningDataModule):
     @property
     def default_transforms(self):
         """TODO: Discuss"""
-        return transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Resize(self.img_size)
+        return Compose([
+            Resize(),
+            ToTensor(),
         ])

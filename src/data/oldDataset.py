@@ -16,7 +16,10 @@ from torch import Tensor
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-class baseDataset(Dataset):
+from .baseDataset import baseDataset
+
+
+class oldDataset(baseDataset):
     def __init__(
         self,
         dataset_config: DictConfig,
@@ -29,44 +32,16 @@ class baseDataset(Dataset):
         **kwargs,
     ):
         """//  todo -1 (general) +0: TODO: add type annotations"""
-        super().__init__()
-        self.IMG_DIR = IMG_DIR
-        self.mode = mode
-        self.SPLIT_DIR = SPLIT_DIR
-        self.SPLIT_FILE = os.path.join(self.SPLIT_DIR, self.mode+'.txt')
-        self.BOX_DIR = BOX_DIR
-        self.VAL_FILE = VAL_FILE
-        self.dataset_config = dataset_config
-
-        self.prepare_data()
-
-        self.transforms = transforms
-            
-    def __len__(self) -> int:
-        return len(self.img_ids)
+        super().__init__(
+            dataset_config,
+            IMG_DIR,
+            SPLIT_DIR,
+            mode,
+            BOX_DIR,
+            VAL_FILE,
+            transforms,
+            **kwargs)
     
-    def __getitem__(self, idx: int):
-        img_id, img, bbox_coord, bbox_class, val_class = self.pull_item(idx)
-        
-        if self.transforms is not None:
-            img, bbox_coord, bbox_class, val_class = self.transforms(img, bbox_coord, bbox_class, val_class)
-        record = {
-                    "img_id": img_id, 
-                    "img": img, 
-                    "bbox_coord": bbox_coord, 
-                    "bbox_class": bbox_class, 
-                    "val_class": val_class,
-                }
-        return record
-
-    def pull_item(self, idx: int):
-        img_id = self.img_ids[idx]
-        img = self.read_img(self.img_paths[idx])
-        bbox_coord, bbox_class = self.read_box(self.box_paths[idx])
-        val_class = self.val_classes[idx]
-        
-        return img_id, img, bbox_coord, bbox_class, val_class
-        
     
     def prepare_data(self, *args, **kwargs):
         """//  todo -4 (general) +0: TODO: Mention required dtypes, format of self.img_ids...."""
