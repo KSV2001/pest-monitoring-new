@@ -1,6 +1,6 @@
 ## Setup
 #### 1. Clone the Repository
-Clone the repository and detectron2 code for reference and we will be mounting it in our docker container too. 
+Clone the repository and detectron2 code for reference and we will be mounting it in our docker container too.
 
 ```bash
 cd ~/
@@ -10,7 +10,7 @@ git clone https://github.com/facebookresearch/detectron2.git detectron2_repo
 ```
 
 #### 2. Setting up Docker Image (skip if on sif or thor)
-If the docker image is not present, 
+If the docker image is not present,
 ```bash
 cd ~/projects/pest-monitoring-new/setup/
 
@@ -39,7 +39,7 @@ bash create_container.sh -g 0 -c 1-10 -n pm-detectron2-container -u shenoy -p 80
 -p: port number (this is needed if you want to start jupyter lab on a remote machine)
 ```
 
-#### 4. Jupyter Notebook 
+#### 4. Jupyter Notebook
 To start a jupyter notebook,
 ```bash
 cd ~/projects/pest-monitoring-new/setup/

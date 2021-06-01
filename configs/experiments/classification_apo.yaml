@@ -13,10 +13,17 @@ trainer:
   _target_: pytorch_lightning.Trainer
   gpus: 1
   min_epochs: 1
-  max_epochs: 10
+  max_epochs: 5
   gradient_clip_val: 0.5
   accumulate_grad_batches: 2
   weights_summary: null
+  deterministic: True
+  # Debug parameters
+  # fast_dev_run: True
+  # overfit_batches: 1
+  # profiler
+  # profiler: 'simple'
+
 
 model:
   _target_: src.models.base.Model
@@ -35,7 +42,7 @@ model:
 
 datamodule:
   _target_: src.data.trial.mnist_datamodule.MNISTDataModule
-  data_dir: "/data/"
+  data_dir: "/output/data/"
   batch_size: 64
   train_val_test_split: [55_000, 5_000, 10_000]
   num_workers: 0

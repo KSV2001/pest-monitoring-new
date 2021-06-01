@@ -1,4 +1,6 @@
+import torch
 from torch.metric import Metric
+
 
 class MyAccuracy(Metric):
     def __init__(self, dist_sync_on_step=False):

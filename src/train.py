@@ -1,11 +1,8 @@
-from typing import List, Optional, Any
-from torch.optim.optimizer import Optimizer
-
 import os
+from typing import List, Optional
+
 import hydra
-from torch import nn
 from omegaconf import DictConfig
-import pytorch_lightning as pl
 from pytorch_lightning import (
     Callback,
     LightningDataModule,
@@ -18,6 +15,7 @@ from pytorch_lightning.loggers import LightningLoggerBase
 from src.utils import utils
 
 log = utils.get_logger(__name__)
+
 
 def train(config: DictConfig) -> Optional[float]:
     """Contains training pipeline.
@@ -38,7 +36,9 @@ def train(config: DictConfig) -> Optional[float]:
 
     # Init Lightning model
     log.info(f"Instantiating model <{config.model._target_}>")
-    model: LightningModule = hydra.utils.instantiate(config.model,  model_config = config.model, _recursive_=False)
+    model: LightningModule = hydra.utils.instantiate(
+        config.model, model_config=config.model, _recursive_=False
+    )
 
     # Init Lightning callbacks
     callbacks: List[Callback] = []
@@ -54,9 +54,12 @@ def train(config: DictConfig) -> Optional[float]:
         for _, lg_conf in config["logger"].items():
             if "_target_" in lg_conf:
                 log.info(f"Instantiating logger <{lg_conf._target_}>")
-                if lg_conf._target_ == 'pytorch_lightning.loggers.wandb.WandbLogger':
-                    logger.append(hydra.utils.instantiate(lg_conf, name = config.run_name, save_dir = os.getcwd()))
-                else: logger.append(hydra.utils.instantiate(lg_conf))    
+                if lg_conf._target_ == "pytorch_lightning.loggers.wandb.WandbLogger":
+                    logger.append(
+                        hydra.utils.instantiate(lg_conf, name=config.run_name, save_dir=os.getcwd())
+                    )
+                else:
+                    logger.append(hydra.utils.instantiate(lg_conf))
 
     # Init Lightning trainer
     log.info(f"Instantiating trainer <{config.trainer._target_}>")

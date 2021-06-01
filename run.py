@@ -1,16 +1,16 @@
-import dotenv
 import os
-import hydra
-from omegaconf import DictConfig, open_dict
-from hydra.experimental import compose, initialize
-import argparse
 import warnings
 
-warnings.simplefilter('ignore')
+import dotenv
+import hydra
+from omegaconf import DictConfig, open_dict
+
+warnings.simplefilter("ignore")
 # load environment variables from `.env` file if it exists
 # recursively searches for `.env` in all folders starting from work dir
 dotenv.load_dotenv(override=True)
-OUT_DIR = '/output/'
+OUT_DIR = "/output/"
+
 
 @hydra.main(config_path="configs/")
 def main(config: DictConfig):
@@ -18,7 +18,7 @@ def main(config: DictConfig):
     # Read more here: https://github.com/facebookresearch/hydra/issues/934
     from src.train import train
     from src.utils import utils
-    
+
     with open_dict(config):
         config.run_name = os.getcwd().split(OUT_DIR)[1]
     # A couple of optional utilities:

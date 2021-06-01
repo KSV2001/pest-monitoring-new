@@ -1,43 +1,43 @@
-import torch
-from torch.utils.data import Dataset
-import json
 import os
 from os.path import join
+
+import torch
 from PIL import Image
 from pycocotools.coco import COCO
-import torchvision
+from torch.utils.data import Dataset
+
 
 class COCODataset(Dataset):
     """
     A PyTorch Dataset class to be used in a PyTorch DataLoader to create batches.
     """
 
-    def __init__(self, root, split = 'train', version = '2014', transforms=None):
+    def __init__(self, root, split="train", version="2014", transforms=None):
         """
         :param image_dir: folder where data files are stored
         :param annotations_dir: folder where annotation files corresponding to splits are stored
-        :param split: 
+        :param split:
         :param split: split, one of 'train' or 'val' or 'test'
         """
-        assert split in {'train', 'val', 'test'}
+        assert split in {"train", "val", "test"}
         self.root = root
         self.verion = version
         self.split = split
-        
+
         # Load coco object using pycoco
         # Load coco object using pycoco
-        if split == 'test':
-            self.coco = COCO(join(root, 'annotations', f'image_info_test{version}.json'))
+        if split == "test":
+            self.coco = COCO(join(root, "annotations", f"image_info_test{version}.json"))
         else:
-            self.coco = COCO(join(root, 'annotations', f'instances_{split}{version}.json'))
-        self.image_dir = join(root, f'{split}')
+            self.coco = COCO(join(root, "annotations", f"instances_{split}{version}.json"))
+        self.image_dir = join(root, f"{split}")
         self.image_ids = list(sorted(self.coco.imgs.keys()))
         self.transforms = transforms
 
     def __getitem__(self, index):
         # Own coco file
         coco = self.coco
-        
+
         # Image ID
         img_id = self.image_ids[index]
         # List: get annotation id from coco
@@ -89,9 +89,9 @@ class COCODataset(Dataset):
                 "labels": my_annotation["labels"].numpy(),
             }
             augmented = self.transforms(**data)
-            img = torch.tensor(augmented['image'])
-            bboxes = torch.tensor(augmented['bboxes'])
-            labels = torch.tensor(augmented['labels'])
+            img = torch.tensor(augmented["image"])
+            bboxes = torch.tensor(augmented["bboxes"])
+            labels = torch.tensor(augmented["labels"])
 
         return img, bboxes, labels
 
@@ -100,11 +100,13 @@ class COCODataset(Dataset):
 
     def collate_fn(self, batch):
         """
-        Since each image may have a different number of objects, we need a collate function (to be passed to the DataLoader).
+        Since each image may have a different number of objects, we need a
+        collate function (to be passed to the DataLoader).
         This describes how to combine these tensors of different sizes. We use lists.
         Note: this need not be defined in this Class, can be standalone.
         :param batch: an iterable of N sets from __getitem__()
-        :return: a tensor of images, lists of varying-size tensors of bounding boxes, labels, and difficulties
+        :return: a tensor of images, lists of varying-size tensors of bounding
+        boxes, labels, and difficulties
         """
 
         images = list()
@@ -118,4 +120,4 @@ class COCODataset(Dataset):
 
         images = torch.stack(images, dim=0)
 
-        return images, boxes, labels  # tensor (N, 3, 300, 300), 3 lists of N tensors each        
+        return images, boxes, labels  # tensor (N, 3, 300, 300), 3 lists of N tensors each
