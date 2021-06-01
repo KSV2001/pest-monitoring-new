@@ -47,7 +47,6 @@ class COCODetectionDataModule(LightningDataModule):
         self.pin_memory = pin_memory
 
         self.sampler = None if "sampler" not in kwargs else kwargs["sampler"]
-        self.collate_fn = None
 
     def setup(self, stage: Optional[str] = None):
         """Split the train and valid dataset"""
@@ -70,7 +69,7 @@ class COCODetectionDataModule(LightningDataModule):
             drop_last=self.drop_last,
             pin_memory=self.pin_memory,
             sampler=self.sampler,
-            collate_fn=self.collate_fn,
+            collate_fn=self.dataset_train.collate_fn,
         )
         return loader
 
@@ -84,7 +83,7 @@ class COCODetectionDataModule(LightningDataModule):
             drop_last=self.drop_last,
             pin_memory=self.pin_memory,
             sampler=self.sampler,
-            collate_fn=self.collate_fn,
+            collate_fn=self.dataset_val.collate_fn,
         )
         return loader
 
@@ -102,7 +101,7 @@ class COCODetectionDataModule(LightningDataModule):
             drop_last=self.drop_last,
             pin_memory=self.pin_memory,
             sampler=self.sampler,
-            collate_fn=self.collate_fn,
+            collate_fn=self.dataset_test.collate_fn,
         )
         return loader
 

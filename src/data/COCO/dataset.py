@@ -84,14 +84,38 @@ class COCODataset(Dataset):
 
         if self.transforms is not None:
             data = {
-                "image": img,
-                "bboxes": my_annotation["boxes"],
-                "category_id": category_ids,
+                "image": img.numpy(),
+                "bboxes": my_annotation["boxes"].numpy(),
+                "labels": my_annotation["labels"].numpy(),
             }
             augmented = self.transforms(**data)
+            img = torch.tensor(augmented['image'])
+            bboxes = torch.tensor(augmented['bboxes'])
+            labels = torch.tensor(augmented['labels'])
 
-
-        return img, **my_annotation
+        return img, bboxes, labels
 
     def __len__(self):
         return len(self.image_ids)
+
+    def collate_fn(self, batch):
+        """
+        Since each image may have a different number of objects, we need a collate function (to be passed to the DataLoader).
+        This describes how to combine these tensors of different sizes. We use lists.
+        Note: this need not be defined in this Class, can be standalone.
+        :param batch: an iterable of N sets from __getitem__()
+        :return: a tensor of images, lists of varying-size tensors of bounding boxes, labels, and difficulties
+        """
+
+        images = list()
+        boxes = list()
+        labels = list()
+
+        for b in batch:
+            images.append(b[0])
+            boxes.append(b[1])
+            labels.append(b[2])
+
+        images = torch.stack(images, dim=0)
+
+        return images, boxes, labels  # tensor (N, 3, 300, 300), 3 lists of N tensors each        

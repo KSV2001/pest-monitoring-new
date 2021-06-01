@@ -22,8 +22,8 @@ model:
   _target_: src.models.base.Model
   network:
     _target_: src.networks.detectron2network.Detectron2Network
-    config_path: "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
-    trained: false
+    config_path: "COCO-Detection/retinanet_R_50_FPN_1x"
+    trained: true
   optimizer:
     _target_: torch.optim.SGD
     lr: 0.01
