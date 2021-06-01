@@ -38,6 +38,7 @@ NV_GPU=$gpu taskset --cpu-list $cpulist nvidia-docker run --rm -it \
 	-v /home/users/"$user"/projects/pest-monitoring-new/:/workspace/pest-monitoring-new \
 	-v /home/users/"$user"/projects/detectron2_repo/:/workspace/detectron2_repo \
 	-v /home/users/:/users/ \
+	-v /scratchh/home/cotton-common/data:/data \
 	-v /scratchh/home/"$user"/:/output \
 	-v ~/.gitconfig:/etc/gitconfig \
 	-w /workspace/pest-monitoring-new \

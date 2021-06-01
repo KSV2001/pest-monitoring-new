@@ -22,22 +22,29 @@ model:
   _target_: src.models.base.Model
   network:
     _target_: src.networks.detectron2network.Detectron2Network
-    config_path: "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
-    trained: false
+    config_path: "COCO-Detection/retinanet_R_50_FPN_1x"
+    trained: true
   optimizer:
     _target_: torch.optim.SGD
     lr: 0.01
     momentum: 0.9
   loss:
     _target_: torch.nn.CrossEntropyLoss
+  metrics:
+    - _target_: torchmetrics.Accuracy
+    - _target_: torchmetrics.Precision
+      num_classes: 3
 
 datamodule:
-  _target_: src.data.trial.mnist_datamodule.MNISTDataModule
-  data_dir: "/data"
-  batch_size: 64
-  train_val_test_split: [55_000, 5_000, 10_000]
-  num_workers: 0
-  pin_memory: False
+  _target_: src.data.COCO.DataModule.COCODetectionDataModule
+  num_workers: 16
+  batch_size: 32
+  shuffle: True
+  drop_last: True
+  pin_memory: True
+  dataset:
+    _target_: src.data.COCO.dataset.COCODataset
+    root: "/data/coco2014/raw/"
 
 callbacks:
   model_checkpoint:
