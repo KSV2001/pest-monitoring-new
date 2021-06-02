@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 import torch
 
 class Compose():
@@ -38,3 +39,10 @@ class Resize():
     def __call__(self, img, bbox_coord=None, bbox_class=None, val_class=None):
         img = cv2.resize(img, self.size)
         return img, bbox_coord, bbox_class, val_class
+
+
+class Permute():
+    """Permutes images"""
+    def __call__(self, img, bbox_coord=None, bbox_class=None, val_class=None):
+        img = np.transpose(img, (2, 0, 1))
+        return img, bbox_coord, bbox_class, val_class   

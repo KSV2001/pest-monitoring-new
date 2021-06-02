@@ -131,5 +131,6 @@ class baseDataModule(LightningDataModule):
         """TODO: Discuss"""
         return Compose([
             Resize(),
+            Permute(),
             ToTensor(),
         ])
