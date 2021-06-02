@@ -1,14 +1,10 @@
 # @package _global_
 
 # to execute this experiment run:
-# python run.py experiment=default.yaml
+# python run.py --config-name=default.yaml
 
 defaults:
   - hydra: default.yaml
-
-  # enable color logging
-  - override hydra/hydra_logging: colorlog
-  - override hydra/job_logging: colorlog
 
 seed: 12345
 

@@ -1,13 +1,13 @@
 # @package _global_
 
 # to execute this experiment run:
-# python run.py experiment=default.yaml
+# python run.py --config-name=classification_apo.yaml
+
+defaults:
+  - hydra: default.yaml
+  - model/metrics: binary_classification
 
 seed: 12345
-
-hydra:
-  run:
-    dir: /output/${hydra.job.config_name}_${now:%m-%d_%H-%M}
 
 trainer:
   _target_: pytorch_lightning.Trainer
@@ -35,10 +35,7 @@ model:
     momentum: 0.9
   loss:
     _target_: torch.nn.CrossEntropyLoss
-  metrics:
-    - _target_: torchmetrics.Accuracy
-    - _target_: torchmetrics.Precision
-      num_classes: 10
+
 
 datamodule:
   _target_: src.data.trial.mnist_datamodule.MNISTDataModule

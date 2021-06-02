@@ -23,7 +23,7 @@ class Model(pl.LightningModule):
         self.criterion: Module = hydra.utils.instantiate(self.model_config.loss)
 
         metrics = MetricCollection(
-            [hydra.utils.instantiate(metric) for metric in self.model_config.metrics]
+            [hydra.utils.instantiate(metric) for metric in self.model_config.metrics.metric_list]
         )
         self.train_metrics = metrics.clone(prefix="train/")
         self.valid_metrics = metrics.clone(prefix="val/")
