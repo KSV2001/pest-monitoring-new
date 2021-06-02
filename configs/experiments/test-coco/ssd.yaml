@@ -7,37 +7,38 @@ seed: 12345
 
 hydra:
   run:
-    dir: /output/${hydra.job.config_name}_${now:%m-%d_%H-%M}
+    dir: /output/${hydra.job.config_name}
 
 trainer:
   _target_: pytorch_lightning.Trainer
   gpus: 0
   min_epochs: 1
-  max_epochs: 10
+  max_epochs: 100
   gradient_clip_val: 0.5
+  limit_train_batches: 0.01
+  limit_val_batches: 0.1
   accumulate_grad_batches: 2
   weights_summary: null
 
 model:
-  _target_: src.models.base.Model
+  _target_: src.models.coco.Model
+  type: "ssd"
   network:
-    _target_: src.networks.detectron2network.Detectron2Network
-    config_path: "COCO-Detection/retinanet_R_50_FPN_1x"
-    trained: true
+    _target_: src.networks.ssd.SSD
+    num_classes: 81
   optimizer:
     _target_: torch.optim.SGD
     lr: 0.01
     momentum: 0.9
   loss:
-    _target_: torch.nn.CrossEntropyLoss
+    _target_: src.loss.Loss
   metrics:
-    - _target_: torchmetrics.Accuracy
-    - _target_: torchmetrics.Precision
-      num_classes: 3
+
 
 datamodule:
-  _target_: src.data.COCO.DataModule.COCODetectionDataModule
-  num_workers: 16
+  _target_: src.data.COCO.datamodule.COCODetectionDataModule
+  type: "ssd"
+  num_workers: 10
   batch_size: 32
   shuffle: True
   drop_last: True
@@ -49,7 +50,7 @@ datamodule:
 callbacks:
   model_checkpoint:
     _target_: pytorch_lightning.callbacks.ModelCheckpoint
-    monitor: None
+    monitor: "train/loss"
     mode: "max"
     dirpath: "checkpoints/"
     filename: "sample-mnist-{epoch:02d}"

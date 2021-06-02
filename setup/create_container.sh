@@ -44,6 +44,7 @@ NV_GPU=$gpu taskset --cpu-list $cpulist nvidia-docker run --rm -it \
 	-w /workspace/pest-monitoring-new \
 	-p $port:$port \
 	--ipc host \
+	--net host \
 	--env WANDB_DOCKER=$image \
 	--env WANDB_API_KEY=$WANDB_API_KEY \
 	$image $exp

@@ -7,19 +7,18 @@ from omegaconf import DictConfig
 from torch.utils.data import DataLoader, Dataset
 from pytorch_lightning import LightningDataModule
 from torchvision import transforms
-from src.data.COCO.transforms import *
+from .transforms import SSDTransformer
+from .utils import generate_dboxes
 
 class COCODetectionDataModule(LightningDataModule):
     """
     COCODetectionDataModule Lightning Datamodule for Object Detection
     """
-
-    name = "detection"
-
     def __init__(
         self,
         data_config: DictConfig,
         dataset: Dataset,
+        type: str,
         num_workers: int = 16,
         batch_size: int = 32,
         shuffle: bool = True,
@@ -46,17 +45,18 @@ class COCODetectionDataModule(LightningDataModule):
         self.drop_last = drop_last
         self.pin_memory = pin_memory
 
+        self.dboxes = generate_dboxes(self.data_config.type)
         self.sampler = None if "sampler" not in kwargs else kwargs["sampler"]
 
     def setup(self, stage: Optional[str] = None):
         """Split the train and valid dataset"""
         self.dataset_train: Dataset = hydra.utils.instantiate(self.data_config.dataset,
                                                             root = self.data_config.dataset.root,
-                                                            transforms = get_train_transforms(),
+                                                            transform = SSDTransformer(dboxes = self.dboxes, test=False),
                                                             split = 'train')
         self.dataset_val: Dataset = hydra.utils.instantiate(self.data_config.dataset,
                                                             root = self.data_config.dataset.root,
-                                                            transforms = get_val_transforms(),
+                                                            transform = SSDTransformer(dboxes = self.dboxes, test=False),
                                                             split = 'val')
         
     def train_dataloader(self):
@@ -91,7 +91,7 @@ class COCODetectionDataModule(LightningDataModule):
         """MNIST test set uses the test split"""
         self.dataset_test: Dataset = hydra.utils.instantiate(self.data_config.dataset,
                                                             root = self.data_config.dataset.root,
-                                                            transforms = get_test_transforms(),
+                                                            transform = SSDTransformer(dboxes = self.dboxes, val=True),
                                                             split = 'test')
         loader = DataLoader(
             self.dataset_test,
@@ -104,11 +104,3 @@ class COCODetectionDataModule(LightningDataModule):
             collate_fn=self.dataset_test.collate_fn,
         )
         return loader
-
-    @property
-    def default_transforms(self):
-        """TODO: Discuss"""
-        return transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Resize(self.img_size)
-        ])
