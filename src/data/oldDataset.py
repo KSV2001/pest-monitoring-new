@@ -72,6 +72,7 @@ class oldDataset(baseDataset):
         """//  todo -1 (general) +0: TODO: This should also have exception. Ideally read image with cv2 -> current docker does not support cv2."""
         im = Image.open(path)
         im = np.asarray(im).copy()
+        im = cv2.cvtColor(im, cv2.COLOR_RGB2BGR)
         return im
 
     
