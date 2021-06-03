@@ -16,10 +16,10 @@ from torch import Tensor
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from .baseDataset import baseDataset
+from .base_dataset import BaseDataset
 
 
-class oldDataset(baseDataset):
+class PestDefaultDataset(BaseDataset):
     def __init__(
         self,
         dataset_config: DictConfig,

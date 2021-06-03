@@ -16,7 +16,7 @@ from torch import Tensor
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-class baseDataset(Dataset):
+class BaseDataset(Dataset):
     def __init__(
         self,
         dataset_config: DictConfig,

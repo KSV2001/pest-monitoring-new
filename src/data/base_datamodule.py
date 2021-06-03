@@ -7,10 +7,10 @@ from omegaconf import DictConfig
 from torch.utils.data import DataLoader, Dataset
 from pytorch_lightning import LightningDataModule
 from torchvision import transforms
-from .baseCollate import default_collate
+from .base_collate import default_collate
 from .augmentations import *
 
-class baseDataModule(LightningDataModule):
+class BaseDataModule(LightningDataModule):
     """
     Standard MNIST, train, val, test splits and transforms
 

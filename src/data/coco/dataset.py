@@ -9,7 +9,6 @@ from torchvision.datasets import CocoDetection
 import numpy as np
 import torchvision
 from torch.utils.data.dataloader import default_collate
-from .utils import Encoder
 from PIL import Image
 from typing import Any, Callable, Optional, Tuple, List
 
@@ -66,7 +65,7 @@ class COCODataset(Dataset):
         width, height = image.size
 
         if len(target) == 0:
-            return None, None, None, None, None
+            return None, None, None
 
         # Bounding boxes for objects
         # In coco format, bbox = [xmin, ymin, width, height]

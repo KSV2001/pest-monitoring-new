@@ -5,7 +5,7 @@ import torch
 import torchvision.transforms as transforms
 from torchvision.ops.boxes import box_iou
 
-from .utils import Encoder
+from src.data.utils import Encoder
 
 class SSDTransformer(object):
     def __init__(self, dboxes, size=(300, 300), test=False):
