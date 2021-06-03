@@ -35,15 +35,14 @@ model:
   metrics:
 
 datamodule:
-  _target_: src.data.pest_detection_ssd.datamodule.PestDetectionDataModule
-  type: "ssd"
+  _target_: src.data.base_datamodule.BaseDataModule
   num_workers: 10
   batch_size: 32
   shuffle: True
   drop_last: True
   pin_memory: True
   dataset:
-    _target_: src.data.pest_detection_ssd.dataset.DetectionDataset
+    _target_: src.data.pest_default_dataset.PestDefaultDataset
     IMG_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/images/"
     SPLIT_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/"
     BOX_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/annot/"
@@ -51,6 +50,25 @@ datamodule:
     label_map: 
       trap: 0
       non_trap: 1
+    transforms:
+      train:
+        - _target_: src.data.transforms.Resize
+          width: 300
+          height: 300           
+        - _target_: src.data.transforms.ToTensor            
+        - _target_: src.data.transforms.Normalize        
+      val:
+        - _target_: src.data.transforms.Resize
+          width: 300
+          height: 300           
+        - _target_: src.data.transforms.ToTensor           
+        - _target_: src.data.transforms.Normalize          
+      test:
+        - _target_: src.data.transforms.Resize
+          width: 300
+          height: 300      
+        - _target_: src.data.transforms.ToTensor                 
+        - _target_: src.data.transforms.Normalize               
 
 callbacks:
   model_checkpoint:

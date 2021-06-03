@@ -44,12 +44,27 @@ class Encoder(object):
 
         # filter IoU > 0.5
         masks = best_dbox_ious > criteria
-        labels_out = torch.zeros(self.nboxes, dtype=torch.long)
+        labels_out = torch.zeros(self.nboxes, dtype=torch.float)
         labels_out[masks] = labels_in[best_dbox_idx[masks]]
         bboxes_out = self.dboxes.clone()
         bboxes_out[masks, :] = bboxes_in[best_dbox_idx[masks], :]
         bboxes_out = box_convert(bboxes_out, in_fmt="xyxy", out_fmt="cxcywh")
         return bboxes_out, labels_out
+
+    def encode_batch(self, bboxes_in_batch, labels_in_batch, criteria=0.5):
+        bboxes_out_batch, labels_out_batch = [], []   
+        for bboxes_in, labels_in in zip(bboxes_in_batch, labels_in_batch):
+            if labels_in.numel() != 0:
+                bboxes_out, labels_out = self.encode(bboxes_in, labels_in)
+                bboxes_out_batch.append(bboxes_out)
+                labels_out_batch.append(labels_out)
+            else:
+                bboxes_out = self.dboxes.clone()
+                bboxes_out = box_convert(bboxes_out, in_fmt="xyxy", out_fmt="cxcywh")
+                bboxes_out_batch.append(bboxes_out)
+                labels_out_batch.append(torch.zeros(self.nboxes, dtype=torch.long))
+
+        return torch.stack(bboxes_out_batch, 0).transpose(1, 2).contiguous(), torch.stack(labels_out_batch, 0)        
 
     def scale_back_batch(self, bboxes_in, scores_in):
         """

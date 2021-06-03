@@ -69,10 +69,7 @@ class PestDefaultDataset(BaseDataset):
 
     
     def read_img(self, path, *args, **kwargs):
-        """//  todo -1 (general) +0: TODO: This should also have exception. Ideally read image with cv2 -> current docker does not support cv2."""
-        im = Image.open(path)
-        im = np.asarray(im).copy()
-        im = cv2.cvtColor(im, cv2.COLOR_RGB2BGR)
+        im = Image.open(path).convert('RGB')
         return im
 
     

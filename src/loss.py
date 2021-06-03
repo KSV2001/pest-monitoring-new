@@ -18,9 +18,9 @@ class Loss(nn.Module):
         self.scale_xy = 1.0 / dboxes.scale_xy
         self.scale_wh = 1.0 / dboxes.scale_wh
 
-        self.sl1_loss = nn.SmoothL1Loss(reduce=False)
+        self.sl1_loss = nn.SmoothL1Loss(reduction='none')
         self.dboxes = nn.Parameter(dboxes(order="xywh").transpose(0, 1).unsqueeze(dim=0), requires_grad=False)
-        self.con_loss = nn.CrossEntropyLoss(reduce=False)
+        self.con_loss = nn.CrossEntropyLoss(reduction='none')
 
     def loc_vec(self, loc):
         gxy = self.scale_xy * (loc[:, :2, :] - self.dboxes[:, :2, :]) / self.dboxes[:, 2:, ]
@@ -33,7 +33,8 @@ class Loss(nn.Module):
                 predicted location and labels
             gloc, glabel: Nx4x8732, Nx8732
                 ground truth location and labels
-        """
+        """ 
+        glabel = glabel.long()
         mask = glabel > 0
         pos_num = mask.sum(dim=1)
 

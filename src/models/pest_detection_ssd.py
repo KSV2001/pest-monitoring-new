@@ -10,7 +10,7 @@ from torch.nn import Module
 from torch.optim.optimizer import Optimizer
 import pytorch_lightning as pl
 from torchmetrics import MetricCollection
-from src.data.utils import generate_dboxes
+from src.data.utils import generate_dboxes, Encoder
 
 class Model(pl.LightningModule):
     """Base class for any machine learning model using Pytorch Lightning
@@ -22,7 +22,8 @@ class Model(pl.LightningModule):
         super().__init__() 
         self.model_config = model_config
         self.dboxes = generate_dboxes(model=self.model_config.type)
-
+        self.box_encoder = Encoder(dboxes = self.dboxes)
+        
         self.network: Module = hydra.utils.instantiate(self.model_config.network)
         self.criterion: Module = hydra.utils.instantiate(self.model_config.loss, dboxes = self.dboxes)
     
@@ -34,10 +35,9 @@ class Model(pl.LightningModule):
         return optimizer      
     
     def step(self, batch: Any):
-        image, gloc, glabel = batch
+        image, gloc, glabel = batch['imgs'], batch['bbox_coords'], batch['bbox_classes']
+        gloc, glabel = self.box_encoder.encode_batch(gloc, glabel)
         ploc, plabel = self.forward(image)
-        ploc, plabel = ploc.float(), plabel.float()
-        gloc = gloc.transpose(1, 2).contiguous()
         loss = self.criterion(ploc, plabel, gloc, glabel)
         return loss
 
