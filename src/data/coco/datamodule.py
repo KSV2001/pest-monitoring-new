@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, Dataset
 from pytorch_lightning import LightningDataModule
 from torchvision import transforms
 from .transforms import SSDTransformer
-from .utils import generate_dboxes
+from src.data.utils import generate_dboxes
 
 class COCODetectionDataModule(LightningDataModule):
     """

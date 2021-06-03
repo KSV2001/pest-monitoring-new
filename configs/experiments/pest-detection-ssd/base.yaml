@@ -1,0 +1,86 @@
+# @package _global_
+
+# to execute this experiment run:
+# python run.py experiment=default.yaml
+
+seed: 12345
+
+hydra:
+  run:
+    dir: /output/${hydra.job.config_name}
+
+trainer:
+  _target_: pytorch_lightning.Trainer
+  gpus: 0
+  min_epochs: 1
+  max_epochs: 10
+  limit_train_batches: 0.05
+  limit_val_batches: 0.1  
+  gradient_clip_val: 0.5
+  accumulate_grad_batches: 2
+  weights_summary: null
+
+model:
+  _target_: src.models.pest_detection_ssd.Model
+  type: "ssd"
+  network:
+    _target_: src.networks.ssd.SSD
+    num_classes: 2
+  optimizer:
+    _target_: torch.optim.SGD
+    lr: 0.01
+    momentum: 0.9
+  loss:
+    _target_: src.loss.Loss
+  metrics:
+
+datamodule:
+  _target_: src.data.base_datamodule.BaseDataModule
+  num_workers: 10
+  batch_size: 32
+  shuffle: True
+  drop_last: True
+  pin_memory: True
+  dataset:
+    _target_: src.data.pest_default_dataset.PestDefaultDataset
+    IMG_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/images/"
+    SPLIT_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/"
+    BOX_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/annot/"
+    VAL_FILE: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/img_val_file.csv"
+    label_map: 
+      trap: 0
+      non_trap: 1
+    transforms:
+      train:
+        - _target_: src.data.transforms.Resize
+          width: 300
+          height: 300           
+        - _target_: src.data.transforms.ToTensor            
+        - _target_: src.data.transforms.Normalize        
+      val:
+        - _target_: src.data.transforms.Resize
+          width: 300
+          height: 300           
+        - _target_: src.data.transforms.ToTensor           
+        - _target_: src.data.transforms.Normalize          
+      test:
+        - _target_: src.data.transforms.Resize
+          width: 300
+          height: 300      
+        - _target_: src.data.transforms.ToTensor                 
+        - _target_: src.data.transforms.Normalize               
+
+callbacks:
+  model_checkpoint:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    monitor: "train/loss"
+    mode: "max"
+    dirpath: "checkpoints/"
+    filename: "sample-ssd-pest-{epoch:02d}"
+
+logger:
+  wandb:
+    _target_: pytorch_lightning.loggers.wandb.WandbLogger
+    project: "pest-monitoring-new"
+    notes: "Description of this model."
+    save_dir: "/output/"

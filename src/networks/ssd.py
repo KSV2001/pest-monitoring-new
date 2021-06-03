@@ -66,7 +66,7 @@ class Base(nn.Module):
 
         locs, confs = list(zip(*ret))
         locs, confs = torch.cat(locs, 2).contiguous(), torch.cat(confs, 2).contiguous()
-        return locs, confs
+        return locs.float(), confs.float()
 
 
 class ResNet(nn.Module):
@@ -140,7 +140,7 @@ class SSD(Base):
             x = l(x)
             detection_feed.append(x)
         locs, confs = self.bbox_view(detection_feed, self.loc, self.conf)
-        return locs, confs
+        return locs.float(), confs.float()
 
 
 feature_maps = {}
@@ -160,7 +160,7 @@ class MobileNetV2(nn.Module):
 
     def forward(self, x):
         x = self.feature_extractor(x)
-        return feature_maps[0], x
+        return feature_maps[0].float(), x.float()
 
 
 def SeperableConv2d(in_channels, out_channels, kernel_size=3):
@@ -206,4 +206,4 @@ class SSDLite(Base):
             x = l(x)
             detection_feed.append(x)
         locs, confs = self.bbox_view(detection_feed, self.loc, self.conf)
-        return locs, confs
+        return locs.float(), confs.float()

@@ -16,7 +16,7 @@ from torch import Tensor
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-class baseDataset(Dataset):
+class BaseDataset(Dataset):
     def __init__(
         self,
         dataset_config: DictConfig,
@@ -47,12 +47,11 @@ class baseDataset(Dataset):
     
     def __getitem__(self, idx: int):
         img_id, img, bbox_coord, bbox_class, val_class = self.pull_item(idx)
-        
         if self.transforms is not None:
             img, bbox_coord, bbox_class, val_class = self.transforms(img, bbox_coord, bbox_class, val_class)
         record = {
                     "img_id": img_id, 
-                    "img": img, 
+                    "img": img.contiguous(), 
                     "bbox_coord": bbox_coord, 
                     "bbox_class": bbox_class, 
                     "val_class": val_class,

@@ -7,17 +7,14 @@ from omegaconf import DictConfig
 from torch.utils.data import DataLoader, Dataset
 from pytorch_lightning import LightningDataModule
 from torchvision import transforms
-from .baseCollate import default_collate
-from .augmentations import *
+from .base_collate import default_collate
+from .transforms import *
 
-class baseDataModule(LightningDataModule):
+class BaseDataModule(LightningDataModule):
     """
     Standard MNIST, train, val, test splits and transforms
 
     """
-
-    name = "base"
-
     def __init__(
         self,
         data_config: DictConfig,
@@ -55,16 +52,12 @@ class baseDataModule(LightningDataModule):
 
         
         self.train_transforms = self.default_transforms if self.data_config.dataset.transforms.train is None \
-                                else transforms.Compose([hydra.utils.instantiate(transform) for transform in self.data_config.dataset.transforms.train])
-        self.val_transforms = self.default_transforms if self.data_config.dataset.transforms.train is None \
-                                else transforms.Compose([hydra.utils.instantiate(transform) for transform in self.data_config.dataset.transforms.val])
-        self.test_transforms = self.default_transforms if self.data_config.dataset.transforms.train is None \
-                                else transforms.Compose([hydra.utils.instantiate(transform) for transform in self.data_config.dataset.transforms.test])
+                                else Compose([hydra.utils.instantiate(transform) for transform in self.data_config.dataset.transforms.train])
+        self.val_transforms = self.default_transforms if self.data_config.dataset.transforms.val is None \
+                                else Compose([hydra.utils.instantiate(transform) for transform in self.data_config.dataset.transforms.val])
+        self.test_transforms = self.default_transforms if self.data_config.dataset.transforms.test is None \
+                                else Compose([hydra.utils.instantiate(transform) for transform in self.data_config.dataset.transforms.test])
 
-    # def prepare_data(self):
-    #     """Saves MNIST files to `data_dir`"""
-    #     MNIST(self.data_dir, train=True, download=True)
-    #     MNIST(self.data_dir, train=False, download=True)
 
     def setup(self, stage: Optional[str] = None):
         """Split the train and valid dataset"""
@@ -128,7 +121,6 @@ class baseDataModule(LightningDataModule):
 
     @property
     def default_transforms(self):
-        """TODO: Discuss"""
         return Compose([
             Resize(),
             Permute(),
