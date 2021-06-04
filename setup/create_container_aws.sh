@@ -22,11 +22,12 @@ if [[ -z $port ]] ; then
 	port=8888
 fi
 
-NV_GPU=$gpu nvidia-docker run --rm -it \
-	--name "$gpu"_"$name" \
-	-p $port:$port \
-	-v /home/ubuntu/projects/pest-monitoring-new/:/workspace/pest-monitoring-new \
-	-v /home/ubuntu/projects/detectron2_repo/:/workspace/detectron2_repo \
-	-p $port:$port \
-	--ipc host \
-	$image bash
+
+docker run --gpus $gpu --rm -it \
+        --name "$gpu"_"$name" \
+        --env NVIDIA_DISABLE_REQUIRE=1 \
+        -p $port:$port \
+        -v <path_of_folder>/:/wokspace/<folder_name> \
+        # eg: -v /home/sachin/projects/pest-monitoring-new/:/workspace/pest-monitoring-new \
+        --ipc host \
+        $image bash
