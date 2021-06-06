@@ -31,7 +31,7 @@ model:
     lr: 0.01
     momentum: 0.9
   loss:
-    _target_: src.loss.Loss
+    _target_: src.loss.base_detection_loss.BaseDetectionLoss
   metrics:
 
 datamodule:

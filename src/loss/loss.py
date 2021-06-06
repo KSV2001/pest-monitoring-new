@@ -4,7 +4,7 @@ import torch.nn as nn
 class DetectionSmoothL1Loss(nn.Module):
     def __init__(self, *args, **kwargs):
         super(DetectionSmoothL1Loss, self).__init__()
-        self.criterion = nn.SmoothL1Loss(reduce=False, *args, **kwargs)
+        self.criterion = nn.SmoothL1Loss(reduction='none', *args, **kwargs)
 
     def forward(self, pred_loc, pred_bclass, true_loc_vec, true_bclass):
         mask = true_bclass > 0
@@ -18,7 +18,7 @@ class DetectionSmoothL1Loss(nn.Module):
 class DetectionHardMinedCELoss(nn.Module):
     def __init__(self, *args, **kwargs):
         super(DetectionHardMinedCELoss, self).__init__()
-        self.criterion = nn.CrossEntropyLoss(reduce=False, *args, **kwargs)
+        self.criterion = nn.CrossEntropyLoss(reduction='none', *args, **kwargs)
 
     def forward(self, pred_loc, pred_bclass, true_loc_vec, true_bclass):
         mask = true_bclass > 0
@@ -46,7 +46,7 @@ class DetectionHardMinedCELoss(nn.Module):
 
         return hard_mined_loss
 
-class baseValidationLoss(nn.Module):
+class BaseValidationLoss(nn.Module):
     """
         Implements the loss as the sum of the followings:
         1. Confidence Loss: All labels, with hard negative mining
@@ -54,7 +54,7 @@ class baseValidationLoss(nn.Module):
         Suppose input dboxes has the shape 8732x4
     """
     def __init__(self, *args, **kwargs):
-        super(baseValidationLoss, self).__init__()
+        super(BaseValidationLoss, self).__init__()
         self.criterion = nn.CrossEntropyLoss(*args, **kwargs)
 
     def forward(self, pred_vclass, true_vclass):

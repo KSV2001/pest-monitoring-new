@@ -3,7 +3,7 @@ import torch.nn as nn
 from .base_detection_loss import *
 from .loss import *
 
-class baseLoss(nn.Module):
+class BaseLoss(nn.Module):
     """
         Implements the loss as the sum of the followings:
         1. Confidence Loss: All labels, with hard negative mining
@@ -18,7 +18,7 @@ class baseLoss(nn.Module):
         validation_weight = 1.,
         dboxes=None,
         ):
-        super(baseLoss, self).__init__()
+        super(BaseLoss, self).__init__()
 
         assert dboxes is not None if detection_criterion is not None else True, "Detection Loss requires default boxes"
         self.dboxes = dboxes

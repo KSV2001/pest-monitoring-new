@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from .loss import *
 
-class baseDetectionLoss(nn.Module):
+class BaseDetectionLoss(nn.Module):
     """
         Implements the loss as the sum of the followings:
         1. Confidence Loss: All labels, with hard negative mining
@@ -10,7 +10,7 @@ class baseDetectionLoss(nn.Module):
         Suppose input dboxes has the shape 8732x4
     """
     def __init__(self, dboxes):
-        super(baseDetectionLoss, self).__init__()
+        super(BaseDetectionLoss, self).__init__()
         self.scale_xy = 1.0/dboxes.scale_xy
         self.scale_wh = 1.0/dboxes.scale_wh
 
@@ -58,7 +58,6 @@ class baseDetectionLoss(nn.Module):
 
         # avoid no object detected
         total_loss = self.loc_weight*loc_loss + self.conf_weight*conf_loss 
-        print(f'Before Reduce: Loc Loss: {loc_loss}, Conf Loss: {conf_loss}')
         red_loss = self.reduce(total_loss, mask)
         
         return red_loss

@@ -64,7 +64,7 @@ class Encoder(object):
                 bboxes_out_batch.append(bboxes_out)
                 labels_out_batch.append(torch.zeros(self.nboxes, dtype=torch.long))
 
-        return torch.stack(bboxes_out_batch, 0).transpose(1, 2).contiguous(), torch.stack(labels_out_batch, 0)        
+        return torch.stack(bboxes_out_batch, 0).transpose(1, 2).contiguous(), torch.stack(labels_out_batch, 0).long()        
 
     def scale_back_batch(self, bboxes_in, scores_in):
         """

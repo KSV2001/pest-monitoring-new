@@ -11,12 +11,9 @@ hydra:
 
 trainer:
   _target_: pytorch_lightning.Trainer
-  gpus: 0
-  min_epochs: 1
-  max_epochs: 10
-  limit_train_batches: 0.05
-  limit_val_batches: 0.1  
+  gpus: 0  
   gradient_clip_val: 0.5
+  overfit_batches: 1
   accumulate_grad_batches: 2
   weights_summary: null
 
