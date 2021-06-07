@@ -1,16 +1,9 @@
 from typing import Optional
 
 import hydra
-from omegaconf import DictConfig
 from pytorch_lightning import LightningDataModule
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, random_split
 from torchvision import transforms
-
-from src.data.COCO.transforms import (
-    get_test_transforms,
-    get_train_transforms,
-    get_val_transforms,
-)
 
 
 class CatsDogsDataModule(LightningDataModule):
@@ -20,20 +13,20 @@ class CatsDogsDataModule(LightningDataModule):
 
     def __init__(
         self,
-        data_config: DictConfig,
         dataset: Dataset,
+        dataset_test: Dataset,
         num_workers: int = 16,
         batch_size: int = 32,
         shuffle: bool = True,
         drop_last: bool = True,
         pin_memory: bool = True,
+        train_val_split: float = 0.8,
         *args,
         **kwargs,
     ):
         """
         Args:
-            data_dir: where to save/load the data
-            val_split: how many of the training images to use for the validation split
+            data_config: Cofiguration of Dataset to be used
             num_workers: how many workers to use for loading data
             normalize: If true applies image normalize
             seed: starting seed for RNG.
@@ -41,32 +34,29 @@ class CatsDogsDataModule(LightningDataModule):
         """
         super().__init__(*args, **kwargs)
 
-        self.data_config = data_config
+        self.dataset = dataset
+        self.dataset_test = dataset_test
         self.num_workers = num_workers
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.drop_last = drop_last
         self.pin_memory = pin_memory
+        self.train_val_split = train_val_split
 
         self.sampler = None if "sampler" not in kwargs else kwargs["sampler"]
 
     def setup(self, stage: Optional[str] = None):
         """Split the train and valid dataset"""
-        self.dataset_train: Dataset = hydra.utils.instantiate(
-            self.data_config.dataset,
-            root=self.data_config.dataset.root,
-            transforms=get_train_transforms(),
-            split="train",
+
+        train_legth = len(self.dataset) * self.train_val_split
+        print(self.dataset)
+        self.dataset_train, self.dataset_val = random_split(
+            self.dataset, [train_legth, len(self.dataset) - train_legth]
         )
-        self.dataset_val: Dataset = hydra.utils.instantiate(
-            self.data_config.dataset,
-            root=self.data_config.dataset.root,
-            transforms=get_val_transforms(),
-            split="val",
-        )
+        del self.dataset
 
     def train_dataloader(self):
-        """MNIST train set removes a subset to use for validation"""
+        """CatsDogsDataset train set removes a subset to use for validation"""
         loader = DataLoader(
             self.dataset_train,
             batch_size=self.batch_size,
@@ -80,7 +70,7 @@ class CatsDogsDataModule(LightningDataModule):
         return loader
 
     def val_dataloader(self):
-        """MNIST val set uses a subset of the training set for validation"""
+        """CatsDogsDataset val set uses a subset of the training set for validation"""
         loader = DataLoader(
             self.dataset_val,
             batch_size=self.batch_size,
@@ -98,7 +88,6 @@ class CatsDogsDataModule(LightningDataModule):
         self.dataset_test: Dataset = hydra.utils.instantiate(
             self.data_config.dataset,
             root=self.data_config.dataset.root,
-            transforms=get_test_transforms(),
             split="test",
         )
         loader = DataLoader(

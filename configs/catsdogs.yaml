@@ -28,7 +28,12 @@ trainer:
 model:
   _target_: src.models.base.Model
   network:
-    _target_: src.networks.trial.modules.simple_dense_net.ConvNet
+    _target_: src.networks.classification.ClassificationImageNet
+    backbone:
+      _target_: torchvision.models.mobilenet_v3_small
+      pretrained: True
+    in_channels: 1
+    num_classes: 2
   optimizer:
     _target_: torch.optim.SGD
     lr: 0.01
@@ -38,12 +43,21 @@ model:
 
 
 datamodule:
-  _target_: src.data.trial.mnist_datamodule.MNISTDataModule
-  data_dir: "/output/data/"
-  batch_size: 64
-  train_val_test_split: [55_000, 5_000, 10_000]
-  num_workers: 0
-  pin_memory: False
+  _target_: src.data.catsdogs.datamodule.CatsDogsDataModule
+  dataset:
+    _target_: src.data.catsdogs.dataset.CatsDogsDataset
+    root: /scratchh/home/apoorv/data/catsdogs
+    split: "train"
+  dataset_test:
+    _target_: src.data.catsdogs.dataset.CatsDogsDataset
+    root: /scratchh/home/apoorv/data/catsdogs
+    split: "test"
+  num_workers: 16
+  batch_size: 32
+  shuffle: True
+  drop_last: True
+  pin_memory: True
+  train_val_split: 0.8
 
 callbacks:
   model_checkpoint:
@@ -51,7 +65,7 @@ callbacks:
     monitor: "val/loss"
     mode: "min"
     dirpath: "checkpoints/"
-    filename: "sample-mnist-{epoch:02d}"
+    filename: "ckpt-epoch-{epoch:02d}"
 
 logger:
   wandb:
