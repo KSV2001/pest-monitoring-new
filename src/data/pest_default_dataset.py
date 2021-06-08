@@ -70,6 +70,7 @@ class PestDefaultDataset(BaseDataset):
     
     def read_img(self, path, *args, **kwargs):
         im = Image.open(path).convert('RGB')
+        im = np.asarray(im)
         return im
 
     

@@ -54,22 +54,22 @@ datamodule:
       train:
         - _target_: src.data.transforms.Resize
           width: 300
-          height: 300           
-        - _target_: src.data.transforms.ToTensor            
+          height: 300
         - _target_: src.data.transforms.Normalize        
+        - _target_: src.data.transforms.ToTensor            
       val:
         - _target_: src.data.transforms.Resize
           width: 300
-          height: 300           
-        - _target_: src.data.transforms.ToTensor           
-        - _target_: src.data.transforms.Normalize          
+          height: 300
+        - _target_: src.data.transforms.Normalize        
+        - _target_: src.data.transforms.ToTensor            
       test:
         - _target_: src.data.transforms.Resize
           width: 300
-          height: 300      
-        - _target_: src.data.transforms.ToTensor                 
-        - _target_: src.data.transforms.Normalize               
-
+          height: 300
+        - _target_: src.data.transforms.Normalize        
+        - _target_: src.data.transforms.ToTensor
+        
 callbacks:
   model_checkpoint:
     _target_: pytorch_lightning.callbacks.ModelCheckpoint
