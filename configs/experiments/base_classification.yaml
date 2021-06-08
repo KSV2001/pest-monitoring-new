@@ -31,7 +31,7 @@ model:
   metrics:
     - _target_: torchmetrics.Accuracy
     - _target_: torchmetrics.Precision
-      num_classes: 10    
+      num_classes: 10
 
 datamodule:
   _target_: src.data.trial.mnist_datamodule.MNISTDataModule

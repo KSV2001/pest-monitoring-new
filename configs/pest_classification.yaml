@@ -3,46 +3,46 @@
 # to execute this experiment run:
 # python run.py experiment=default.yaml
 
-seed: 12345
+defaults:
+  - hydra: default.yaml
+  - model/metrics: binary_classification
 
-hydra:
-  run:
-    dir: /output/${hydra.job.config_name}
+seed: 12345
 
 trainer:
   _target_: pytorch_lightning.Trainer
   gpus: 0
-  gradient_clip_val: 0.5
+  min_epochs: 1
+  max_epochs: 50
   overfit_batches: 1
-  accumulate_grad_batches: 2
-  weights_summary: null
 
 model:
-  _target_: src.models.pest_detection_ssd.Model
-  type: "ssd-lite"
+  _target_: src.models.base.Model
   network:
-    _target_: src.networks.ssd.SSDLite
-    num_classes: 3
+    _target_: src.networks.classification.ClassificationImageNet
+    backbone:
+      _target_: torchvision.models.mobilenet_v3_small
+      pretrained: True
+    num_classes: 2
   optimizer:
     _target_: torch.optim.SGD
     lr: 0.01
     momentum: 0.9
   loss:
-    _target_: src.loss.base_detection_loss.BaseDetectionLoss
-  metrics:
+    _target_: torch.nn.CrossEntropyLoss
 
 datamodule:
   _target_: src.data.base_datamodule.BaseDataModule
   num_workers: 10
-  batch_size: 8
+  batch_size: 32
   shuffle: True
   drop_last: True
   pin_memory: True
+  collate_fn: null # <
   dataset:
-    _target_: src.data.pest_default_dataset.PestDefaultDataset
+    _target_: src.data.trap_dataset.TrapValidationDataset
     IMG_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/images/"
-    SPLIT_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/trap"
-    BOX_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/annot/"
+    SPLIT_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/"
     VAL_FILE: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/img_val_file.csv"
     label_map:
       trap: 0
@@ -50,20 +50,20 @@ datamodule:
     transforms:
       train:
         - _target_: src.data.transforms.Resize
-          width: 300
-          height: 300
+          width: 224
+          height: 224
         - _target_: src.data.transforms.ToTensor
         - _target_: src.data.transforms.Normalize
       val:
         - _target_: src.data.transforms.Resize
-          width: 300
-          height: 300
+          width: 224
+          height: 224
         - _target_: src.data.transforms.ToTensor
         - _target_: src.data.transforms.Normalize
       test:
         - _target_: src.data.transforms.Resize
-          width: 300
-          height: 300
+          width: 224
+          height: 224
         - _target_: src.data.transforms.ToTensor
         - _target_: src.data.transforms.Normalize
 
@@ -79,5 +79,5 @@ logger:
   wandb:
     _target_: pytorch_lightning.loggers.wandb.WandbLogger
     project: "pest-monitoring-new"
-    notes: "Description of this model."
+    notes: "Binary Classification (Traps / Non-Traps)"
     save_dir: "/output/"
