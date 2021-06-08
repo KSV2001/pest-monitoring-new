@@ -1,14 +1,13 @@
 """
 Downloads data version (split) files.
 """
-from os import makedirs, symlink
-from os.path import join, basename, exists, isdir
-from glob import glob
+from os import makedirs
+from os.path import basename, exists, isdir, join
 from subprocess import call
-from termcolor import colored
-from tqdm import tqdm
 
-DATA_DIR = '/data/coco/raw'
+from termcolor import colored
+
+DATA_DIR = "/data/coco/raw"
 makedirs(DATA_DIR, exist_ok=True)
 
 URLs = [
@@ -22,11 +21,11 @@ URLs = [
 for url in URLs:
     # download and unzip files at relevant location
     fname = basename(url)
-    print(colored(f"=> Downloading {fname}", 'yellow'))
-    
+    print(colored(f"=> Downloading {fname}", "yellow"))
+
     zip_fpath = join(DATA_DIR, fname)
-    unzip_folder = zip_fpath.split('.zip')[0]
-    
+    unzip_folder = zip_fpath.split(".zip")[0]
+
     # download and unzip
     if not exists(zip_fpath):
         call(f"wget {url} -O {zip_fpath} -q --show-progress", shell=True)
