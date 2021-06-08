@@ -19,9 +19,9 @@ trainer:
 
 model:
   _target_: src.models.pest_detection_ssd.Model
-  type: "ssd-lite"
+  img_size: 300
   network:
-    _target_: src.networks.ssd.SSDLite
+    _target_: src.networks.ssd.SSD
     num_classes: 3
   optimizer:
     _target_: torch.optim.SGD

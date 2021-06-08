@@ -6,7 +6,8 @@ from omegaconf import DictConfig
 from torch.nn import Module
 from torch.optim.optimizer import Optimizer
 
-from src.data.utils import Encoder, generate_dboxes
+from src.data.utils import Encoder
+from src.utils.prior_boxes import generate_dboxes
 from src.metrics.pascal_voc_evaluator import get_metrics
 
 
@@ -20,8 +21,9 @@ class Model(pl.LightningModule):
     def __init__(self, model_config: DictConfig, **kwargs):
         super().__init__()
         self.model_config = model_config
-        self.dboxes = generate_dboxes(model=self.model_config.type)
+        self.dboxes = generate_dboxes(size=self.model_config.img_size)
         self.box_encoder = Encoder(dboxes=self.dboxes)
+        self.img_shape = (self.model_config.img_size, self.model_config.img_size)
 
         self.network: Module = hydra.utils.instantiate(self.model_config.network)
         self.criterion: Module = hydra.utils.instantiate(self.model_config.loss, dboxes=self.dboxes)
@@ -36,17 +38,16 @@ class Model(pl.LightningModule):
         return optimizer
 
     def step(self, batch: Any):
-
-        image, gloc_, glabel_, img_ids = (
+        images, glocs, glabels, img_ids = (
             batch["imgs"],
             batch["bbox_coords"],
             batch["bbox_classes"],
             batch["img_ids"],
         )
-        gloc, glabel = self.box_encoder.encode_batch(gloc_, glabel_)
-        ploc, plabel = self.forward(image)
-        loss = self.criterion(ploc, plabel, gloc, glabel)
-        return loss, gloc_, glabel_, img_ids, ploc, plabel
+        gloc_anchored, glabel_anchored, glocs, glabels = self.pre_forward_step(glocs, glabels)
+        plocs, plabels = self.forward(images)
+        loss = self.criterion(plocs, plabels, gloc_anchored, glabel_anchored)
+        return loss, glocs, glabels, img_ids, plocs, plabels
 
     def pre_forward_step(self, glocs, glabels):
         for glabel in glabels:
@@ -58,15 +59,15 @@ class Model(pl.LightningModule):
         return gloc_anchored, glabel_anchored, glocs, glabels
 
     def training_step(self, batch, batch_idx):
-        loss, glocs, glabels, plocs, plabels, img_ids = self.step(batch)
+        loss, glocs, glabels, img_ids, plocs, plabels = self.step(batch)
 
         output = get_metrics(
             img_ids=img_ids,
-            ploc=ploc.detach().clone(),
-            plabel=plabel.detach().clone(),
-            gloc=gloc_,
-            glabel=glabel_,
-            img_shape=(300, 300),
+            ploc=plocs.detach().clone(),
+            plabel=plabels.detach().clone(),
+            gloc=glocs,
+            glabel=glabels,
+            img_shape=self.img_shape,
             nms_threshold=0.5,
             max_num=200,
             iou_threshold=0.5,
@@ -81,15 +82,15 @@ class Model(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        loss, glocs, glabels, plocs, plabels, img_ids = self.step(batch)
+        loss, glocs, glabels, img_ids, plocs, plabels = self.step(batch)
 
         output = get_metrics(
             img_ids=img_ids,
-            ploc=ploc.detach().clone(),
-            plabel=plabel.detach().clone(),
-            gloc=gloc_,
-            glabel=glabel_,
-            img_shape=(300, 300),
+            ploc=plocs.detach().clone(),
+            plabel=plabels.detach().clone(),
+            gloc=glocs,
+            glabel=glabels,
+            img_shape=self.img_shape,
             nms_threshold=0.5,
             max_num=200,
             iou_threshold=0.5,
