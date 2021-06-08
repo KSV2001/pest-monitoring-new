@@ -28,11 +28,10 @@ class Compose:
 class ToTensor:
     def __call__(self, img, bbox_coord=None, bbox_class=None, val_class=None):
         img = F.to_tensor(img)
-        bbox_coord = torch.from_numpy(bbox_coord)
-        bbox_class = torch.from_numpy(bbox_class)
-        val_class = torch.Tensor([val_class])
+        if bbox_coord is not None: bbox_coord = torch.from_numpy(bbox_coord)
+        if bbox_class is not None: bbox_class = torch.from_numpy(bbox_class)
+        if val_class is not None: val_class = torch.Tensor([val_class])
         return img, bbox_coord, bbox_class, val_class
-
 
 class Resize:
     """Resize images"""
