@@ -70,6 +70,7 @@ instance/
 
 # Scrapy stuff:
 .scrapy
+setup/.nfs8089e7a4002aa42000001362
 
 # Sphinx documentation
 docs/_build/

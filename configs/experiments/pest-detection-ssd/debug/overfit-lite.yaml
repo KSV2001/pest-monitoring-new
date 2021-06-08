@@ -11,7 +11,7 @@ hydra:
 
 trainer:
   _target_: pytorch_lightning.Trainer
-  gpus: 0  
+  gpus: 0
   gradient_clip_val: 0.5
   overfit_batches: 1
   accumulate_grad_batches: 2
@@ -44,28 +44,28 @@ datamodule:
     SPLIT_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/"
     BOX_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/annot/"
     VAL_FILE: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/img_val_file.csv"
-    label_map: 
+    label_map:
       trap: 0
       non_trap: 1
     transforms:
       train:
         - _target_: src.data.transforms.Resize
           width: 300
-          height: 300           
-        - _target_: src.data.transforms.ToTensor            
-        - _target_: src.data.transforms.Normalize        
+          height: 300
+        - _target_: src.data.transforms.ToTensor
+        - _target_: src.data.transforms.Normalize
       val:
         - _target_: src.data.transforms.Resize
           width: 300
-          height: 300           
-        - _target_: src.data.transforms.ToTensor           
-        - _target_: src.data.transforms.Normalize          
+          height: 300
+        - _target_: src.data.transforms.ToTensor
+        - _target_: src.data.transforms.Normalize
       test:
         - _target_: src.data.transforms.Resize
           width: 300
-          height: 300      
-        - _target_: src.data.transforms.ToTensor                 
-        - _target_: src.data.transforms.Normalize   
+          height: 300
+        - _target_: src.data.transforms.ToTensor
+        - _target_: src.data.transforms.Normalize
 
 callbacks:
   model_checkpoint:
