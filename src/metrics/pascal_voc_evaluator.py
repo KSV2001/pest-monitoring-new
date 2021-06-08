@@ -1,3 +1,6 @@
+# Author: rafaelpadilla
+# Github repo: https://github.com/rafaelpadilla/review_object_detection_metrics
+
 import os
 import sys
 from collections import Counter
@@ -433,7 +436,7 @@ def get_metrics(
         if glabel_i.numel() == 0:
             continue
 
-        gloc_i, glabel_i = gloc_i.detach().numpy(), glabel_i.detach().numpy()
+        gloc_i, glabel_i = gloc_i.detach().numpy(), glabel_i.detach().numpy().astype(np.int32)
         for loc_, label_ in zip(gloc_i, glabel_i):
             gt_boxes.append(
                 BoundingBox(
@@ -443,10 +446,12 @@ def get_metrics(
                     type_coordinates=CoordinatesType.RELATIVE,
                     img_size=img_shape,
                     bb_type=BBType.GROUND_TRUTH,
-                    format=BBFormat.XYX2Y2,
-                )
-            )
+                    format=BBFormat.XYX2Y2)) 
 
-    return get_pascalvoc_metrics(
-        gt_boxes, pd_boxes, iou_threshold=iou_threshold, method=method, generate_table=False
-    )
+    # gt_boxes = [BB, BB, BB] pd_boxes = [BB, BB, BB, BB]
+    return get_pascalvoc_metrics(gt_boxes,
+                          pd_boxes,
+                          iou_threshold=iou_threshold,
+                          method=method,
+                          generate_table=False)  
+

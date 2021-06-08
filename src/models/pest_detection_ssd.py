@@ -36,6 +36,7 @@ class Model(pl.LightningModule):
         return optimizer
 
     def step(self, batch: Any):
+
         image, gloc_, glabel_, img_ids = (
             batch["imgs"],
             batch["bbox_coords"],
@@ -47,8 +48,17 @@ class Model(pl.LightningModule):
         loss = self.criterion(ploc, plabel, gloc, glabel)
         return loss, gloc_, glabel_, img_ids, ploc, plabel
 
+    def pre_forward_step(self, glocs, glabels):
+        for glabel in glabels:
+            if glabel.numel() > 0:
+                glabel += 1 # Adding 1 to all classes as 0. is background class, specific to SSD
+        gloc_anchored, glabel_anchored = self.box_encoder.encode_batch(glocs, glabels)
+        gloc_anchored = gloc_anchored.transpose(1, 2).contiguous()
+        glabel_anchored = glabel_anchored.long()
+        return gloc_anchored, glabel_anchored, glocs, glabels
+
     def training_step(self, batch, batch_idx):
-        loss, gloc_, glabel_, img_ids, ploc, plabel = self.step(batch)
+        loss, glocs, glabels, plocs, plabels, img_ids = self.step(batch)
 
         output = get_metrics(
             img_ids=img_ids,
@@ -66,11 +76,12 @@ class Model(pl.LightningModule):
             "train/mAP", output["mAP"], on_step=False, on_epoch=True, prog_bar=True, logger=True
         )
         self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+
         # self.log_dict(output, on_step=False, on_epoch=True, logger=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        loss, gloc_, glabel_, img_ids, ploc, plabel = self.step(batch)
+        loss, glocs, glabels, plocs, plabels, img_ids = self.step(batch)
 
         output = get_metrics(
             img_ids=img_ids,

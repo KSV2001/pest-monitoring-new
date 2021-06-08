@@ -25,7 +25,7 @@ model:
   type: "ssd-lite"
   network:
     _target_: src.networks.ssd.SSDLite
-    num_classes: 2
+    num_classes: 3
   optimizer:
     _target_: torch.optim.SGD
     lr: 0.01
