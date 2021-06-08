@@ -25,7 +25,7 @@ model:
   type: "ssd"
   network:
     _target_: src.networks.ssd.SSD
-    num_classes: 2
+    num_classes: 3
   optimizer:
     _target_: torch.optim.SGD
     lr: 0.01
@@ -44,7 +44,7 @@ datamodule:
   dataset:
     _target_: src.data.pest_default_dataset.PestDefaultDataset
     IMG_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/images/"
-    SPLIT_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/"
+    SPLIT_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/trap/"
     BOX_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/annot/"
     VAL_FILE: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/img_val_file.csv"
     label_map: 

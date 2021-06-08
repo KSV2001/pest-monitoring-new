@@ -36,13 +36,8 @@ class Model(pl.LightningModule):
     def step(self, batch: Any):
         image, gloc, glabel = batch
         ploc, plabel = self.forward(image)
-        ploc, plabel = ploc.float(), plabel.float()
         gloc = gloc.transpose(1, 2).contiguous()
-        
-        try:
-            loss = self.criterion(ploc, plabel, gloc, glabel)
-        except:
-            import ipdb; ipdb.set_trace()
+        loss = self.criterion(ploc, plabel, gloc, glabel)
         return loss
 
     def training_step(self, batch, batch_idx):

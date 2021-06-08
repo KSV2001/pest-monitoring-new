@@ -64,7 +64,7 @@ class Encoder(object):
                 bboxes_out_batch.append(bboxes_out)
                 labels_out_batch.append(torch.zeros(self.nboxes, dtype=torch.long))
 
-        return torch.stack(bboxes_out_batch, 0).transpose(1, 2).contiguous(), torch.stack(labels_out_batch, 0).long()        
+        return torch.stack(bboxes_out_batch, 0), torch.stack(labels_out_batch, 0)
 
     def scale_back_batch(self, bboxes_in, scores_in):
         """
@@ -74,8 +74,8 @@ class Encoder(object):
         self.dboxes = self.dboxes
         self.dboxes_xywh = self.dboxes_xywh
 
-        bboxes_in = bboxes_in.permute(0, 2, 1)
-        scores_in = scores_in.permute(0, 2, 1)
+        bboxes_in = bboxes_in.permute(0, 2, 1) # (batch, 8732, 4)
+        scores_in = scores_in.permute(0, 2, 1) # (batch, 8732, 2)
 
         bboxes_in[:, :, :2] = self.scale_xy * bboxes_in[:, :, :2]
         bboxes_in[:, :, 2:] = self.scale_wh * bboxes_in[:, :, 2:]

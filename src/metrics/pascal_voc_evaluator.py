@@ -424,7 +424,7 @@ def get_metrics(img_ids: List[str],
         if glabel_i.numel() == 0:
             continue
         
-        gloc_i, glabel_i = gloc_i.detach().numpy(), glabel_i.detach().numpy()
+        gloc_i, glabel_i = gloc_i.detach().numpy(), glabel_i.detach().numpy().astype(np.int32)
         for loc_, label_ in zip(gloc_i, glabel_i):
             gt_boxes.append(BoundingBox(image_name = img_ids[idx],
                     class_id=str(label_),
