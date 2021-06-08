@@ -20,4 +20,5 @@ class ClassificationImageNet(torch.nn.Module):
     def forward(self, x):
         x = self.channel_corrector(x)
         x = self.backbone(x)
-        return self.out_layer(x)
+        x = self.out_layer(x)
+        return x

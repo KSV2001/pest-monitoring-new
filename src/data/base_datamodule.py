@@ -1,30 +1,28 @@
-import platform
-import os
 from typing import Optional
-from warnings import warn
+
 import hydra
 from omegaconf import DictConfig
-from torch.utils.data import DataLoader, Dataset
 from pytorch_lightning import LightningDataModule
-from torchvision import transforms
+from torch.utils.data import DataLoader, Dataset
+
 from .base_collate import default_collate
-from .transforms import *
+from .transforms import Compose, Permute, Resize, ToTensor
+
 
 class BaseDataModule(LightningDataModule):
     """
     Standard MNIST, train, val, test splits and transforms
 
     """
+
     def __init__(
         self,
         data_config: DictConfig,
-        dataset: Dataset,
         num_workers: int = 16,
         batch_size: int = 32,
         shuffle: bool = True,
         drop_last: bool = True,
         pin_memory: bool = True,
-        *args,
         **kwargs,
     ):
         """
@@ -36,8 +34,8 @@ class BaseDataModule(LightningDataModule):
             seed: starting seed for RNG.
             batch_size: desired batch size.
         """
-        super().__init__(*args, **kwargs)
-        
+        super().__init__()
+
         self.data_config = data_config
         self.num_workers = num_workers
         self.batch_size = batch_size
@@ -47,31 +45,61 @@ class BaseDataModule(LightningDataModule):
         self.drop_last = drop_last
         self.pin_memory = pin_memory
 
-        self.sampler = None if "sampler" not in kwargs else kwargs["sampler"]  # Take sampler as a input in config file
-        self.collate_fn = default_collate if "collate_fn" not in self.data_config else self.data_config.collate_fn
+        self.sampler = (
+            None if "sampler" not in kwargs else kwargs["sampler"]
+        )  # Take sampler as a input in config file
+        self.collate_fn = (
+            default_collate if "collate_fn" not in self.data_config else self.data_config.collate_fn
+        )
 
-        
-        self.train_transforms = self.default_transforms if self.data_config.dataset.transforms.train is None \
-                                else Compose([hydra.utils.instantiate(transform) for transform in self.data_config.dataset.transforms.train])
-        self.val_transforms = self.default_transforms if self.data_config.dataset.transforms.val is None \
-                                else Compose([hydra.utils.instantiate(transform) for transform in self.data_config.dataset.transforms.val])
-        self.test_transforms = self.default_transforms if self.data_config.dataset.transforms.test is None \
-                                else Compose([hydra.utils.instantiate(transform) for transform in self.data_config.dataset.transforms.test])
-
+        self.train_transforms = (
+            self.default_transforms
+            if self.data_config.dataset.transforms.train is None
+            else Compose(
+                [
+                    hydra.utils.instantiate(transform)
+                    for transform in self.data_config.dataset.transforms.train
+                ]
+            )
+        )
+        self.val_transforms = (
+            self.default_transforms
+            if self.data_config.dataset.transforms.val is None
+            else Compose(
+                [
+                    hydra.utils.instantiate(transform)
+                    for transform in self.data_config.dataset.transforms.val
+                ]
+            )
+        )
+        self.test_transforms = (
+            self.default_transforms
+            if self.data_config.dataset.transforms.test is None
+            else Compose(
+                [
+                    hydra.utils.instantiate(transform)
+                    for transform in self.data_config.dataset.transforms.test
+                ]
+            )
+        )
 
     def setup(self, stage: Optional[str] = None):
         """Split the train and valid dataset"""
-        self.dataset_train: Dataset = hydra.utils.instantiate(self.data_config.dataset,
-                                                             dataset_config = self.data_config.dataset,
-                                                             mode = 'train',
-                                                             transforms = self.train_transforms,
-                                                              _recursive_=False)
-        self.dataset_val: Dataset = hydra.utils.instantiate(self.data_config.dataset,
-                                                            dataset_config = self.data_config.dataset,
-                                                            mode = 'val',
-                                                            transforms = self.val_transforms,
-                                                             _recursive_=False)
-        
+        self.dataset_train: Dataset = hydra.utils.instantiate(
+            self.data_config.dataset,
+            dataset_config=self.data_config.dataset,
+            mode="train",
+            transforms=self.train_transforms,
+            _recursive_=False,
+        )
+        self.dataset_val: Dataset = hydra.utils.instantiate(
+            self.data_config.dataset,
+            dataset_config=self.data_config.dataset,
+            mode="val",
+            transforms=self.val_transforms,
+            _recursive_=False,
+        )
+
     def train_dataloader(self):
         """MNIST train set removes a subset to use for validation"""
         loader = DataLoader(
@@ -102,11 +130,13 @@ class BaseDataModule(LightningDataModule):
 
     def test_dataloader(self):
         """MNIST test set uses the test split"""
-        self.dataset_test: Dataset = hydra.utils.instantiate(self.data_config.dataset,
-                                                            dataset_config = self.data_config.dataset,
-                                                            mode = 'test',
-                                                            transforms = self.test_transforms,
-                                                             _recursive_=False)
+        self.dataset_test: Dataset = hydra.utils.instantiate(
+            self.data_config.dataset,
+            dataset_config=self.data_config.dataset,
+            mode="test",
+            transforms=self.test_transforms,
+            _recursive_=False,
+        )
         loader = DataLoader(
             self.dataset_test,
             batch_size=self.batch_size,
@@ -121,8 +151,10 @@ class BaseDataModule(LightningDataModule):
 
     @property
     def default_transforms(self):
-        return Compose([
-            Resize(),
-            Permute(),
-            ToTensor(),
-        ])
+        return Compose(
+            [
+                Resize(),
+                Permute(),
+                ToTensor(),
+            ]
+        )

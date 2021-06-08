@@ -3,8 +3,9 @@
 """
 import torch
 import torch.nn as nn
-from torchvision.models.resnet import resnet50
 from torchvision.models.mobilenet import mobilenet_v2
+from torchvision.models.resnet import resnet50
+
 
 class ConvBNReLU(nn.Sequential):
     def __init__(self, in_planes, out_planes, kernel_size=3, stride=1, groups=1, norm_layer=None):
@@ -12,10 +13,13 @@ class ConvBNReLU(nn.Sequential):
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         super(ConvBNReLU, self).__init__(
-            nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, groups=groups, bias=False),
+            nn.Conv2d(
+                in_planes, out_planes, kernel_size, stride, padding, groups=groups, bias=False
+            ),
             norm_layer(out_planes),
-            nn.ReLU6(inplace=True)
+            nn.ReLU6(inplace=True),
         )
+
 
 class InvertedResidual(nn.Module):
     def __init__(self, inp, oup, stride, expand_ratio, norm_layer=None):
@@ -33,13 +37,17 @@ class InvertedResidual(nn.Module):
         if expand_ratio != 1:
             # pw
             layers.append(ConvBNReLU(inp, hidden_dim, kernel_size=1, norm_layer=norm_layer))
-        layers.extend([
-            # dw
-            ConvBNReLU(hidden_dim, hidden_dim, stride=stride, groups=hidden_dim, norm_layer=norm_layer),
-            # pw-linear
-            nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
-            norm_layer(oup),
-        ])
+        layers.extend(
+            [
+                # dw
+                ConvBNReLU(
+                    hidden_dim, hidden_dim, stride=stride, groups=hidden_dim, norm_layer=norm_layer
+                ),
+                # pw-linear
+                nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
+                norm_layer(oup),
+            ]
+        )
         self.conv = nn.Sequential(*layers)
 
     def forward(self, x):
@@ -47,6 +55,7 @@ class InvertedResidual(nn.Module):
             return x + self.conv(x)
         else:
             return self.conv(x)
+
 
 class Base(nn.Module):
     def __init__(self):
@@ -108,13 +117,16 @@ class SSD(Base):
     def _build_additional_features(self, input_size):
         self.additional_blocks = []
         for i, (input_size, output_size, channels) in enumerate(
-                zip(input_size[:-1], input_size[1:], [256, 256, 128, 128, 128])):
+            zip(input_size[:-1], input_size[1:], [256, 256, 128, 128, 128])
+        ):
             if i < 3:
                 layer = nn.Sequential(
                     nn.Conv2d(input_size, channels, kernel_size=1, bias=False),
                     nn.BatchNorm2d(channels),
                     nn.ReLU(inplace=True),
-                    nn.Conv2d(channels, output_size, kernel_size=3, padding=1, stride=2, bias=False),
+                    nn.Conv2d(
+                        channels, output_size, kernel_size=3, padding=1, stride=2, bias=False
+                    ),
                     nn.BatchNorm2d(output_size),
                     nn.ReLU(inplace=True),
                 )
@@ -132,12 +144,11 @@ class SSD(Base):
 
         self.additional_blocks = nn.ModuleList(self.additional_blocks)
 
-
     def forward(self, x):
         x = self.feature_extractor(x)
         detection_feed = [x]
-        for l in self.additional_blocks:
-            x = l(x)
+        for additional_block in self.additional_blocks:
+            x = additional_block(x)
             detection_feed.append(x)
         locs, confs = self.bbox_view(detection_feed, self.loc, self.conf)
         return locs.float(), confs.float()
@@ -166,8 +177,13 @@ class MobileNetV2(nn.Module):
 def SeperableConv2d(in_channels, out_channels, kernel_size=3):
     padding = (kernel_size - 1) // 2
     return nn.Sequential(
-        nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=kernel_size,
-                  groups=in_channels, padding=padding),
+        nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=in_channels,
+            kernel_size=kernel_size,
+            groups=in_channels,
+            padding=padding,
+        ),
         nn.BatchNorm2d(in_channels),
         nn.ReLU6(),
         nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1),
@@ -176,7 +192,10 @@ def SeperableConv2d(in_channels, out_channels, kernel_size=3):
 
 def StackedSeperableConv2d(ls_channels, multiplier):
     out_channels = 6 * multiplier
-    layers = [SeperableConv2d(in_channels=in_channels, out_channels=out_channels) for in_channels in ls_channels]
+    layers = [
+        SeperableConv2d(in_channels=in_channels, out_channels=out_channels)
+        for in_channels in ls_channels
+    ]
     layers.append(nn.Conv2d(in_channels=ls_channels[-1], out_channels=out_channels, kernel_size=1))
     return nn.ModuleList(layers)
 
@@ -187,23 +206,24 @@ class SSDLite(Base):
         self.feature_extractor = backbone
         self.num_classes = num_classes
 
-        self.additional_blocks = nn.ModuleList([
-            InvertedResidual(1280, 512, stride=2, expand_ratio=0.2),
-            InvertedResidual(512, 256, stride=2, expand_ratio=0.25),
-            InvertedResidual(256, 256, stride=2, expand_ratio=0.5),
-            InvertedResidual(256, 64, stride=2, expand_ratio=0.25)
-        ])
+        self.additional_blocks = nn.ModuleList(
+            [
+                InvertedResidual(1280, 512, stride=2, expand_ratio=0.2),
+                InvertedResidual(512, 256, stride=2, expand_ratio=0.25),
+                InvertedResidual(256, 256, stride=2, expand_ratio=0.5),
+                InvertedResidual(256, 64, stride=2, expand_ratio=0.25),
+            ]
+        )
         header_channels = [round(576 * width_mul), 1280, 512, 256, 256, 64]
         self.loc = StackedSeperableConv2d(header_channels, 4)
         self.conf = StackedSeperableConv2d(header_channels, self.num_classes)
         self.init_weights()
 
-
     def forward(self, x):
         y, x = self.feature_extractor(x)
         detection_feed = [y, x]
-        for l in self.additional_blocks:
-            x = l(x)
+        for additional_block in self.additional_blocks:
+            x = additional_block(x)
             detection_feed.append(x)
         locs, confs = self.bbox_view(detection_feed, self.loc, self.conf)
         return locs.float(), confs.float()

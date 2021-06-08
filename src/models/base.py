@@ -2,6 +2,7 @@ from typing import Any
 
 import hydra
 import pytorch_lightning as pl
+import torch.nn.functional as F
 from omegaconf import DictConfig
 from torch.nn import Module
 from torch.optim.optimizer import Optimizer
@@ -46,7 +47,7 @@ class Model(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         loss, out, y = self.step(batch)
 
-        output = self.train_metrics(out, y)
+        output = self.train_metrics(F.softmax(out, dim=1), y)
         self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
         self.log_dict(output, on_step=False, on_epoch=True, logger=True)
         return loss
@@ -54,6 +55,6 @@ class Model(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         loss, out, y = self.step(batch)
 
-        output = self.valid_metrics(out, y)
+        output = self.valid_metrics(F.softmax(out, dim=1), y)
         self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
         self.log_dict(output, on_step=False, on_epoch=True)

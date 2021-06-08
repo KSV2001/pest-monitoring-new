@@ -1,7 +1,8 @@
 metric_list:
   - _target_: torchmetrics.Accuracy
-    threshold: 0.5
   - _target_: torchmetrics.Precision
+  - _target_: torchmetrics.Recall
   - _target_: torchmetrics.AUROC
-  - _target_: torchmetrics.ConfusionMatrix
     num_classes: 2
+  # - _target_: torchmetrics.ConfusionMatrix
+  #   num_classes: 2
