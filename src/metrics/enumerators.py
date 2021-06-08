@@ -1,3 +1,6 @@
+# Author: rafaelpadilla
+# Github repo: https://github.com/rafaelpadilla/review_object_detection_metrics
+
 from enum import Enum
 
 

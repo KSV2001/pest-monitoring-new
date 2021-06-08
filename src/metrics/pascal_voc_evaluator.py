@@ -1,3 +1,6 @@
+# Author: rafaelpadilla
+# Github repo: https://github.com/rafaelpadilla/review_object_detection_metrics
+
 import os
 import sys
 from collections import Counter
@@ -434,6 +437,7 @@ def get_metrics(img_ids: List[str],
                     bb_type=BBType.GROUND_TRUTH,
                     format=BBFormat.XYX2Y2)) 
 
+    # gt_boxes = [BB, BB, BB] pd_boxes = [BB, BB, BB, BB]
     return get_pascalvoc_metrics(gt_boxes,
                           pd_boxes,
                           iou_threshold=iou_threshold,

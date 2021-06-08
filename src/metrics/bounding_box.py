@@ -1,3 +1,6 @@
+# Author: rafaelpadilla
+# Github repo: https://github.com/rafaelpadilla/review_object_detection_metrics
+
 from math import isclose
 
 from .utils import convert_to_absolute_values, convert_to_relative_values
@@ -6,7 +9,9 @@ from .enumerators import BBFormat, BBType, CoordinatesType
 
 
 class BoundingBox:
-    """ Class representing a bounding box. """
+    """ Class representing a bounding box. 
+    Inspired by https://github.com/rafaelpadilla/review_object_detection_metrics/blob/main/src/bounding_box.py
+    """
     def __init__(self,
                  image_name,
                  class_id=None,
