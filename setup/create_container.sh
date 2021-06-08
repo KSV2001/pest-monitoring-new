@@ -34,6 +34,7 @@ fi
 NV_GPU=$gpu taskset --cpu-list $cpulist nvidia-docker run --rm -it \
 	--shm-size 16G \
 	--name "$gpu"_"$name" \
+	-v /scratchh:/scratchh \
 	-v /home/users/"$user"/projects/pest-monitoring-new/:/workspace/pest-monitoring-new \
 	-v /home/users/"$user"/projects/detectron2_repo/:/workspace/detectron2_repo \
 	-v /scratchh:/scratchh \
@@ -48,4 +49,3 @@ NV_GPU=$gpu taskset --cpu-list $cpulist nvidia-docker run --rm -it \
 	--env WANDB_DOCKER=$image \
 	--env WANDB_API_KEY=$WANDB_API_KEY \
 	$image $exp
- 

@@ -7,10 +7,10 @@ import torch.nn as nn
 
 class Loss(nn.Module):
     """
-        Implements the loss as the sum of the followings:
-        1. Confidence Loss: All labels, with hard negative mining
-        2. Localization Loss: Only on positive labels
-        Suppose input dboxes has the shape 8732x4
+    Implements the loss as the sum of the followings:
+    1. Confidence Loss: All labels, with hard negative mining
+    2. Localization Loss: Only on positive labels
+    Suppose input dboxes has the shape 8732x4
     """
 
     def __init__(self, dboxes):
@@ -18,22 +18,31 @@ class Loss(nn.Module):
         self.scale_xy = 1.0 / dboxes.scale_xy
         self.scale_wh = 1.0 / dboxes.scale_wh
 
-        self.sl1_loss = nn.SmoothL1Loss(reduction='none')
-        self.dboxes = nn.Parameter(dboxes(order="xywh").transpose(0, 1).unsqueeze(dim=0), requires_grad=False)
-        self.con_loss = nn.CrossEntropyLoss(reduction='none')
+        self.sl1_loss = nn.SmoothL1Loss(reduction="none")
+        self.dboxes = nn.Parameter(
+            dboxes(order="xywh").transpose(0, 1).unsqueeze(dim=0), requires_grad=False
+        )
+        self.con_loss = nn.CrossEntropyLoss(reduction="none")
 
     def loc_vec(self, loc):
-        gxy = self.scale_xy * (loc[:, :2, :] - self.dboxes[:, :2, :]) / self.dboxes[:, 2:, ]
+        gxy = (
+            self.scale_xy
+            * (loc[:, :2, :] - self.dboxes[:, :2, :])
+            / self.dboxes[
+                :,
+                2:,
+            ]
+        )
         gwh = self.scale_wh * (loc[:, 2:, :] / self.dboxes[:, 2:, :]).log()
         return torch.cat((gxy, gwh), dim=1).contiguous()
 
     def forward(self, ploc, plabel, gloc, glabel):
         """
-            ploc, plabel: Nx4x8732, Nxlabel_numx8732
-                predicted location and labels
-            gloc, glabel: Nx4x8732, Nx8732
-                ground truth location and labels
-        """ 
+        ploc, plabel: Nx4x8732, Nxlabel_numx8732
+            predicted location and labels
+        gloc, glabel: Nx4x8732, Nx8732
+            ground truth location and labels
+        """
         glabel = glabel.long()
         mask = glabel > 0
         pos_num = mask.sum(dim=1)

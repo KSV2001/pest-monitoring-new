@@ -15,7 +15,7 @@ trainer:
   min_epochs: 1
   max_epochs: 10
   limit_train_batches: 0.05
-  limit_val_batches: 0.1  
+  limit_val_batches: 0.1
   gradient_clip_val: 0.5
   accumulate_grad_batches: 2
   weights_summary: null
@@ -47,28 +47,28 @@ datamodule:
     SPLIT_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/trap/"
     BOX_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/annot/"
     VAL_FILE: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/img_val_file.csv"
-    label_map: 
+    label_map:
       trap: 0
       non_trap: 1
     transforms:
       train:
         - _target_: src.data.transforms.Resize
           width: 300
-          height: 300           
-        - _target_: src.data.transforms.ToTensor            
-        - _target_: src.data.transforms.Normalize        
+          height: 300
+        - _target_: src.data.transforms.ToTensor
+        - _target_: src.data.transforms.Normalize
       val:
         - _target_: src.data.transforms.Resize
           width: 300
-          height: 300           
-        - _target_: src.data.transforms.ToTensor           
-        - _target_: src.data.transforms.Normalize          
+          height: 300
+        - _target_: src.data.transforms.ToTensor
+        - _target_: src.data.transforms.Normalize
       test:
         - _target_: src.data.transforms.Resize
           width: 300
-          height: 300      
-        - _target_: src.data.transforms.ToTensor                 
-        - _target_: src.data.transforms.Normalize               
+          height: 300
+        - _target_: src.data.transforms.ToTensor
+        - _target_: src.data.transforms.Normalize
 
 callbacks:
   model_checkpoint:

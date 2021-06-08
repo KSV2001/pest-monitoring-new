@@ -1,63 +1,55 @@
 # @package _global_
-
 # to execute this experiment run:
-# python run.py --config-name=default.yaml
-
-defaults:
-  - hydra: default.yaml
+# python run.py --config-name=classification_apo.yaml
+# defaults:
+#   - hydra: default.yaml
+#   - model/metrics: binary_classification
 
 seed: 12345
-
 trainer:
   _target_: pytorch_lightning.Trainer
-  gpus: 0
+  gpus: 1
   min_epochs: 1
-  max_epochs: 10
+  max_epochs: 5
   gradient_clip_val: 0.5
   accumulate_grad_batches: 2
   weights_summary: null
+  deterministic: True
   # Debug parameters
   # fast_dev_run: True
-  # overfit_batches: 3
+  # overfit_batches: 1
   # profiler
   # profiler: 'simple'
-
 model:
   _target_: src.models.base.Model
   network:
-    _target_: src.networks.detectron2network.Detectron2Network
-    config_path: "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
-    trained: false
+    _target_: src.networks.classification.ClassificationNet
+    backbone:
+      _target_: torchvision.models.mobilenet_v3_small
+      pretrained: True
+    num_classes: 2
   optimizer:
     _target_: torch.optim.SGD
     lr: 0.01
     momentum: 0.9
   loss:
-    _target_: src.loss.MultiBoxLoss
-  metrics:
-    - _target_: torchmetrics.Accuracy
-    - _target_: torchmetrics.Precision
-      num_classes: 3
-
+    _target_: torch.nn.CrossEntropyLoss
 datamodule:
   _target_: src.data.trial.mnist_datamodule.MNISTDataModule
-  data_dir: "/data/"
+  data_dir: "/output/data/"
   batch_size: 64
   train_val_test_split: [55_000, 5_000, 10_000]
   num_workers: 0
   pin_memory: False
-
 callbacks:
   model_checkpoint:
     _target_: pytorch_lightning.callbacks.ModelCheckpoint
-    monitor: train/loss
+    monitor: "val/loss"
     mode: "min"
     dirpath: "checkpoints/"
     filename: "sample-mnist-{epoch:02d}"
-
 logger:
   wandb:
     _target_: pytorch_lightning.loggers.wandb.WandbLogger
     project: "pest-monitoring-new"
     notes: "Description of this model."
-    save_dir: "/output/"

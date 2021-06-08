@@ -11,6 +11,7 @@ class MethodAveragePrecision(Enum):
         Developed by: Rafael Padilla
         Last modification: Apr 28 2018
     """
+
     EVERY_POINT_INTERPOLATION = 1
     ELEVEN_POINT_INTERPOLATION = 2
 
@@ -22,6 +23,7 @@ class CoordinatesType(Enum):
         Developed by: Rafael Padilla
         Last modification: Apr 28 2018
     """
+
     RELATIVE = 1
     ABSOLUTE = 2
 
@@ -30,6 +32,7 @@ class BBType(Enum):
     """
     Class representing if the bounding box is groundtruth or not.
     """
+
     GROUND_TRUTH = 1
     DETECTED = 2
 
@@ -38,6 +41,7 @@ class BBFormat(Enum):
     """
     Class representing the format of a bounding box.
     """
+
     XYWH = 1
     XYX2Y2 = 2
     PASCAL_XML = 3

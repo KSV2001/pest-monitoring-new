@@ -1,24 +1,26 @@
 import torch
 import torch.nn as nn
 
+
 class DetectionSmoothL1Loss(nn.Module):
     def __init__(self, *args, **kwargs):
         super(DetectionSmoothL1Loss, self).__init__()
-        self.criterion = nn.SmoothL1Loss(reduction='none', *args, **kwargs)
+        self.criterion = nn.SmoothL1Loss(reduction="none", *args, **kwargs)
 
     def forward(self, pred_loc, pred_bclass, true_loc_vec, true_bclass):
         mask = true_bclass > 0
 
         # sum on four coordinates, and mask
         loss = self.criterion(pred_loc, true_loc_vec).sum(dim=1)
-        masked_loss = (mask.float()*loss).sum(dim=1)
+        masked_loss = (mask.float() * loss).sum(dim=1)
 
         return masked_loss
+
 
 class DetectionHardMinedCELoss(nn.Module):
     def __init__(self, *args, **kwargs):
         super(DetectionHardMinedCELoss, self).__init__()
-        self.criterion = nn.CrossEntropyLoss(reduction='none', *args, **kwargs)
+        self.criterion = nn.CrossEntropyLoss(reduction="none", *args, **kwargs)
 
     def forward(self, pred_loc, pred_bclass, true_loc_vec, true_bclass):
         mask = true_bclass > 0
@@ -34,25 +36,26 @@ class DetectionHardMinedCELoss(nn.Module):
         _, con_rank = con_idx.sort(dim=1)
 
         # number of negative three times positive
-        neg_num = torch.clamp(3*pos_num, max=mask.size(1)).unsqueeze(-1)
+        neg_num = torch.clamp(3 * pos_num, max=mask.size(1)).unsqueeze(-1)
         neg_mask = con_rank < neg_num
 
-        #print(con.shape, mask.shape, neg_mask.shape)
+        # print(con.shape, mask.shape, neg_mask.shape)
 
         # TODO: Confirm that positive class is counted only once
         # hard_mined_loss = (loss*(mask.float() + neg_mask.float())).sum(dim=1)
-        hard_mined_loss = (loss*(mask + neg_mask).float()).sum(dim=1)
-
+        hard_mined_loss = (loss * (mask + neg_mask).float()).sum(dim=1)
 
         return hard_mined_loss
 
+
 class BaseValidationLoss(nn.Module):
     """
-        Implements the loss as the sum of the followings:
-        1. Confidence Loss: All labels, with hard negative mining
-        2. Localization Loss: Only on positive labels
-        Suppose input dboxes has the shape 8732x4
+    Implements the loss as the sum of the followings:
+    1. Confidence Loss: All labels, with hard negative mining
+    2. Localization Loss: Only on positive labels
+    Suppose input dboxes has the shape 8732x4
     """
+
     def __init__(self, *args, **kwargs):
         super(BaseValidationLoss, self).__init__()
         self.criterion = nn.CrossEntropyLoss(*args, **kwargs)

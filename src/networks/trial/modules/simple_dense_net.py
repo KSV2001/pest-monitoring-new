@@ -1,9 +1,11 @@
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
 
 class SimpleDenseNet(nn.Module):
-    def __init__(self, input_size: int, lin1_size: int, lin2_size: int, lin3_size: int, output_size: int):
+    def __init__(
+        self, input_size: int, lin1_size: int, lin2_size: int, lin3_size: int, output_size: int
+    ):
         super().__init__()
 
         self.net = nn.Sequential(
@@ -26,6 +28,7 @@ class SimpleDenseNet(nn.Module):
         x = x.view(batch_size, -1)
         return self.net(x)
 
+
 class ConvNet(nn.Module):
     def __init__(self):
         super(ConvNet, self).__init__()
@@ -40,4 +43,4 @@ class ConvNet(nn.Module):
         x = x.view(-1, 320)
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
-        return x   
+        return x

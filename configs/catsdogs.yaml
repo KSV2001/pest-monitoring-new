@@ -1,0 +1,74 @@
+# @package _global_
+
+# to execute this experiment run:
+# python run.py --config-name=classification_apo.yaml
+
+defaults:
+  - hydra: default.yaml
+  - model/metrics: binary_classification
+
+seed: 12345
+
+trainer:
+  _target_: pytorch_lightning.Trainer
+  gpus: 1
+  min_epochs: 1
+  max_epochs: 5
+  gradient_clip_val: 0.5
+  accumulate_grad_batches: 2
+  weights_summary: null
+  deterministic: True
+  # Debug parameters
+  # fast_dev_run: True
+  # overfit_batches: 1
+  # profiler
+  # profiler: 'simple'
+
+
+model:
+  _target_: src.models.base.Model
+  network:
+    _target_: src.networks.classification.ClassificationImageNet
+    backbone:
+      _target_: torchvision.models.mobilenet_v3_small
+      pretrained: True
+    in_channels: 1
+    num_classes: 2
+  optimizer:
+    _target_: torch.optim.SGD
+    lr: 0.01
+    momentum: 0.9
+  loss:
+    _target_: torch.nn.CrossEntropyLoss
+
+
+datamodule:
+  _target_: src.data.catsdogs.datamodule.CatsDogsDataModule
+  dataset:
+    _target_: src.data.catsdogs.dataset.CatsDogsDataset
+    root: /scratchh/home/apoorv/data/catsdogs
+    split: "train"
+  dataset_test:
+    _target_: src.data.catsdogs.dataset.CatsDogsDataset
+    root: /scratchh/home/apoorv/data/catsdogs
+    split: "test"
+  num_workers: 16
+  batch_size: 32
+  shuffle: True
+  drop_last: True
+  pin_memory: True
+  train_val_split: 0.8
+
+callbacks:
+  model_checkpoint:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    monitor: "val/loss"
+    mode: "min"
+    dirpath: "checkpoints/"
+    filename: "ckpt-epoch-{epoch:02d}"
+
+logger:
+  wandb:
+    _target_: pytorch_lightning.loggers.wandb.WandbLogger
+    project: "pest-monitoring-new"
+    notes: "Description of this model."

@@ -1,8 +1,8 @@
 # size => (width, height) of the image
 # box => (X1, X2, Y1, Y2) of the bounding box
 def convert_to_relative_values(size, box):
-    dw = 1. / (size[0])
-    dh = 1. / (size[1])
+    dw = 1.0 / (size[0])
+    dh = 1.0 / (size[1])
     cx = (box[1] + box[0]) / 2.0
     cy = (box[3] + box[2]) / 2.0
     w = box[1] - box[0]
