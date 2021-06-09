@@ -3,9 +3,10 @@
 # to execute this experiment run:
 # python run.py experiment=default.yaml
 
-defaults:
-  - hydra: default.yaml
-  - model/metrics: binary_classification
+# output path from experiment outputs
+hydra:
+  run:
+    dir: /output/experiments/${hydra.job.config_name}_${now:%m-%d_%H-%M}
 
 seed: 12345
 
@@ -29,6 +30,13 @@ model:
     momentum: 0.9
   loss:
     _target_: torch.nn.CrossEntropyLoss
+  metrics:
+    metric_list:
+    - _target_: torchmetrics.Accuracy
+    - _target_: torchmetrics.Precision
+    - _target_: torchmetrics.Recall
+    - _target_: torchmetrics.AUROC
+      num_classes: 2
 
 datamodule:
   _target_: src.data.base_datamodule.BaseDataModule
