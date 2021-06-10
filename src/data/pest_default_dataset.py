@@ -55,7 +55,8 @@ class PestDefaultDataset(BaseDataset):
             self.val_classes = [None] * len(self.img_ids)
 
     def read_img(self, path, *args, **kwargs):
-        im = Image.open(path).convert("RGB")
+        im = Image.open(path).convert('RGB')
+        im = np.asarray(im)
         return im
 
     def read_box(self, path, *args, **kwargs):
