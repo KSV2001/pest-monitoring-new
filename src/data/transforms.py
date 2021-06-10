@@ -38,8 +38,8 @@ class ToTensor:
     def __call__(self, img, bbox_coord=None, bbox_class=None, val_class=None):
         transform = ToTensorV2()
         transformed_img = transform(image=img)['image']
-        bbox_coord = None if bbox_coord is None else torch.from_numpy(bbox_coord)
-        bbox_class = None if bbox_class is None else torch.from_numpy(bbox_class)
+        bbox_coord = None if bbox_coord is None else torch.FloatTensor(bbox_coord)
+        bbox_class = None if bbox_class is None else torch.Tensor(bbox_class)
         val_class = None if val_class is None else torch.Tensor([val_class])
         return transformed_img, bbox_coord, bbox_class, val_class
 
