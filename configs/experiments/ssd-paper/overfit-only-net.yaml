@@ -12,18 +12,16 @@ hydra:
 trainer:
   _target_: pytorch_lightning.Trainer
   gpus: 1
-  min_epochs: 1
-  max_epochs: 100
+  overfit_batches: 1
+  max_epochs: 10
   gradient_clip_val: 0.5
   accumulate_grad_batches: 2
   weights_summary: null
   profiler: simple
 
 model:
-  _target_: src.models.ssd.Model
-  min_score: 0.1
-  max_overlap: 0.45
-  top_k: 200
+  _target_: src.models.pest_detection_ssd.Model
+  img_size: 300
   network:
     _target_: src.networks.ssd_paper.SSD300
     n_classes: 3
@@ -32,7 +30,7 @@ model:
     lr: 0.01
     momentum: 0.9
   loss:
-    _target_: src.loss.ssd_loss.MultiBoxLoss
+    _target_: src.loss.base_detection_loss.BaseDetectionLoss
   metric:
     _target_: src.metrics_.ObjectDetectionMetrics
 
@@ -76,7 +74,7 @@ callbacks:
   model_checkpoint:
     _target_: pytorch_lightning.callbacks.ModelCheckpoint
     monitor: "train/loss"
-    mode: "max"
+    mode: min
     dirpath: "checkpoints/"
     filename: "sample-ssd-pest-{epoch:02d}"
 

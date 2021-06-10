@@ -11,9 +11,10 @@ hydra:
 
 trainer:
   _target_: pytorch_lightning.Trainer
-  gpus: 0
+  gpus: 1
   overfit_batches: 1
   max_epochs: 10
+  log_every_n_steps: 10
   gradient_clip_val: 0.5
   accumulate_grad_batches: 2
   weights_summary: null
@@ -21,6 +22,9 @@ trainer:
 
 model:
   _target_: src.models.ssd.Model
+  min_score: 0.5
+  max_overlap: 0.45
+  top_k: 100  
   network:
     _target_: src.networks.ssd_paper.SSD300
     n_classes: 3
@@ -30,19 +34,20 @@ model:
     momentum: 0.9
   loss:
     _target_: src.loss.ssd_loss.MultiBoxLoss
-  metrics:
+  metric:
+    _target_: src.metrics_.ObjectDetectionMetrics
 
 datamodule:
   _target_: src.data.base_datamodule.BaseDataModule
   num_workers: 10
-  batch_size: 32
+  batch_size: 16
   shuffle: True
   drop_last: True
   pin_memory: True
   dataset:
     _target_: src.data.pest_default_dataset.PestDefaultDataset
     IMG_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/images/"
-    SPLIT_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/trap/"
+    SPLIT_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/ssd_splits/"
     BOX_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/annot/"
     VAL_FILE: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/img_val_file.csv"
     label_map:
@@ -72,7 +77,7 @@ callbacks:
   model_checkpoint:
     _target_: pytorch_lightning.callbacks.ModelCheckpoint
     monitor: "train/loss"
-    mode: "max"
+    mode: min
     dirpath: "checkpoints/"
     filename: "sample-ssd-pest-{epoch:02d}"
 

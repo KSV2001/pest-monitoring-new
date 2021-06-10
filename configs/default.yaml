@@ -10,7 +10,7 @@ seed: 12345
 
 trainer:
   _target_: pytorch_lightning.Trainer
-  gpus: 0
+  gpus: 1
   min_epochs: 1
   max_epochs: 10
   gradient_clip_val: 0.5

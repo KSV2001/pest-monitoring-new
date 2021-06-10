@@ -3,8 +3,11 @@ from typing import Any
 import hydra
 import pytorch_lightning as pl
 from omegaconf import DictConfig
+import torch
 from torch.nn import Module
 from torch.optim.optimizer import Optimizer
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Model(pl.LightningModule):
     """Base class for any machine learning model using Pytorch Lightning
@@ -21,6 +24,7 @@ class Model(pl.LightningModule):
         self.criterion: Module = hydra.utils.instantiate(
             self.model_config.loss, priors_cxcy=self.network.priors_cxcy
             )
+        self.metric = hydra.utils.instantiate(self.model_config.metric)
 
     def forward(self, x):
         return self.network(x)
@@ -32,22 +36,36 @@ class Model(pl.LightningModule):
         return optimizer
 
     def step(self, batch: Any):
-        images, glocs, glabels = (
+        images, glocs, glabels, img_ids = (
             batch["imgs"],
             batch["bbox_coords"],
-            batch["bbox_classes"]
+            batch["bbox_classes"],
+            batch["img_ids"]
         )
+        glabels = [glabel + 1 for glabel in glabels]
         plocs, plabels = self.forward(images)
-        loss = self.criterion(plocs, plabels, glocs, glabels)
-        return loss, glocs, glabels, plocs, plabels
+        loss, conf_loss, loc_loss = self.criterion(plocs, plabels, glocs, glabels)
+        return {'loss' : loss, 
+                'conf_loss' : conf_loss, 
+                'loc_loss' : loc_loss, 
+                'plocs' : plocs, 
+                'plabels' : plabels, 
+                'glocs' : glocs, 
+                'glabels' : glabels,
+                'img_ids' : img_ids
+                }
 
     def training_step(self, batch, batch_idx):
-        loss, glocs, glabels, plocs, plabels = self.step(batch)
-
-        self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
-        return loss
+        step_output = self.step(batch)
+                                         
+        self.log("train/loss", step_output['loss'], on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log("train/conf_loss", step_output['conf_loss'], on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log("train/loc_loss", step_output['loc_loss'], on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        return step_output['loss']
 
     def validation_step(self, batch, batch_idx):
-        loss, glocs, glabels, plocs, plabels = self.step(batch)
+        step_output = self.step(batch)
 
-        self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log("val/loss", step_output['loss'], on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log("val/conf_loss", step_output['conf_loss'], on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log("val/loc_loss", step_output['loc_loss'], on_step=False, on_epoch=True, prog_bar=True, logger=True)

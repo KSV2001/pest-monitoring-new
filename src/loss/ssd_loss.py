@@ -15,6 +15,7 @@ class MultiBoxLoss(nn.Module):
 
     def __init__(self, priors_cxcy, threshold=0.5, neg_pos_ratio=3, alpha=1.):
         super(MultiBoxLoss, self).__init__()
+        
         self.priors_cxcy = priors_cxcy
         self.priors_xy = cxcy_to_xy(priors_cxcy)
         self.threshold = threshold
@@ -33,14 +34,17 @@ class MultiBoxLoss(nn.Module):
         :param labels: true object labels, a list of N tensors
         :return: multibox loss, a scalar
         """
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         batch_size = predicted_locs.size(0)
         n_priors = self.priors_cxcy.size(0)
         n_classes = predicted_scores.size(2)
 
-        assert n_priors == predicted_locs.size(1) == predicted_scores.size(1)
+        self.priors_cxcy = self.priors_cxcy.to(device)
+        self.priors_xy = self.priors_xy.to(device)
 
-        true_locs = torch.zeros((batch_size, n_priors, 4), dtype=torch.float) # (N, 8732, 4)
-        true_classes = torch.zeros((batch_size, n_priors), dtype=torch.long)  # (N, 8732)
+        assert n_priors == predicted_locs.size(1) == predicted_scores.size(1)
+        true_locs = torch.zeros((batch_size, n_priors, 4), dtype=torch.float).to(device) # (N, 8732, 4)
+        true_classes = torch.zeros((batch_size, n_priors), dtype=torch.long).to(device)  # (N, 8732)
 
         # For each image
         for i in range(batch_size):
@@ -62,7 +66,7 @@ class MultiBoxLoss(nn.Module):
                 _, prior_for_each_object = overlap.max(dim=1)  # (N_o)
 
                 # Then, assign each object to the corresponding maximum-overlap-prior. (This fixes 1.)
-                object_for_each_prior[prior_for_each_object] = torch.LongTensor(range(n_objects))
+                object_for_each_prior[prior_for_each_object] = torch.LongTensor(range(n_objects)).to(device)
 
                 # To ensure these priors qualify, artificially give them an overlap of greater than 0.5. (This fixes 2.)
                 overlap_for_each_prior[prior_for_each_object] = 1.
@@ -115,7 +119,7 @@ class MultiBoxLoss(nn.Module):
         conf_loss_neg = conf_loss_all.clone()  # (N, 8732)
         conf_loss_neg[positive_priors] = 0.  # (N, 8732), positive priors are ignored (never in top n_hard_negatives)
         conf_loss_neg, _ = conf_loss_neg.sort(dim=1, descending=True)  # (N, 8732), sorted by decreasing hardness
-        hardness_ranks = torch.LongTensor(range(n_priors)).unsqueeze(0).expand_as(conf_loss_neg)  # (N, 8732)
+        hardness_ranks = torch.LongTensor(range(n_priors)).unsqueeze(0).expand_as(conf_loss_neg).to(device)  # (N, 8732)
         hard_negatives = hardness_ranks < n_hard_negatives.unsqueeze(1)  # (N, 8732)
         conf_loss_hard_neg = conf_loss_neg[hard_negatives]  # (sum(n_hard_negatives))
 
@@ -123,4 +127,4 @@ class MultiBoxLoss(nn.Module):
         conf_loss = (conf_loss_hard_neg.sum() + conf_loss_pos.sum()) / n_positives.sum().float()  # (), scalar
 
         # TOTAL LOSS
-        return conf_loss + self.alpha * loc_loss
+        return conf_loss + self.alpha * loc_loss, conf_loss, loc_loss

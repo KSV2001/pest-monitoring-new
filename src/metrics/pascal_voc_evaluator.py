@@ -415,7 +415,7 @@ def get_metrics(
             continue
 
         # height, width = (300, 300)
-        loc, label, prob = [r.detach().numpy() for r in result]
+        loc, label, prob = [r.detach().cpu().numpy() for r in result]
         for loc_, label_, prob_ in zip(loc, label, prob):
             pd_boxes.append(
                 BoundingBox(
@@ -436,7 +436,7 @@ def get_metrics(
         if glabel_i.numel() == 0:
             continue
 
-        gloc_i, glabel_i = gloc_i.detach().numpy(), glabel_i.detach().numpy().astype(np.int32)
+        gloc_i, glabel_i = gloc_i.detach().cpu().numpy(), glabel_i.detach().cpu().numpy().astype(np.int32)
         for loc_, label_ in zip(gloc_i, glabel_i):
             gt_boxes.append(
                 BoundingBox(

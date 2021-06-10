@@ -39,13 +39,13 @@ class Encoder(object):
 
         # set best ious 2.0
         best_dbox_ious.index_fill_(0, best_bbox_idx, 2.0)
-
-        idx = torch.arange(0, best_bbox_idx.size(0), dtype=torch.int64)
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        idx = torch.arange(0, best_bbox_idx.size(0), dtype=torch.int64).to(device)
         best_dbox_idx[best_bbox_idx[idx]] = idx
 
         # filter IoU > 0.5
         masks = best_dbox_ious > criteria
-        labels_out = torch.zeros(self.nboxes, dtype=torch.float)
+        labels_out = torch.zeros(self.nboxes, dtype=torch.float).to(device)
         labels_out[masks] = labels_in[best_dbox_idx[masks]]
         bboxes_out = self.dboxes.clone()
         bboxes_out[masks, :] = bboxes_in[best_dbox_idx[masks], :]
@@ -53,6 +53,7 @@ class Encoder(object):
         return bboxes_out, labels_out
 
     def encode_batch(self, bboxes_in_batch, labels_in_batch, criteria=0.5):
+        self.move_to_correct_device()
         bboxes_out_batch, labels_out_batch = [], []
         for bboxes_in, labels_in in zip(bboxes_in_batch, labels_in_batch):
             if labels_in.numel() != 0:
@@ -90,6 +91,7 @@ class Encoder(object):
         return bboxes_in, F.softmax(scores_in, dim=-1)
 
     def decode_batch(self, bboxes_in, scores_in, nms_threshold=0.45, max_output=200):
+        self.move_to_correct_device()
         bboxes, probs = self.scale_back_batch(bboxes_in, scores_in)
         output = []
         for bbox, prob in zip(bboxes.split(1, 0), probs.split(1, 0)):
@@ -145,6 +147,14 @@ class Encoder(object):
         _, max_ids = scores_out.sort(dim=0)
         max_ids = max_ids[-max_output:]
         return bboxes_out[max_ids, :], labels_out[max_ids], scores_out[max_ids]
+    
+    def move_to_correct_device(self):
+        if torch.cuda.is_available():
+            self.dboxes = self.dboxes.to('cuda')
+            self.dboxes_xywh = self.dboxes_xywh.to('cuda')
+        else:
+            self.dboxes = self.dboxes.to('cpu')
+            self.dboxes_xywh = self.dboxes_xywh.to('cpu')
 
 
 class DefaultBoxes(object):

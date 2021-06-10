@@ -1,5 +1,5 @@
 # Inspired by Github Repo : https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection/
-
+import os
 from torch import nn
 from src.utils.ssd_utils import *
 import torch.nn.functional as F
@@ -9,6 +9,8 @@ import torchvision
 from src.utils import utils
 
 log = utils.get_logger(__name__)
+
+os.environ['TORCH_HOME'] = '/data/'
 
 class VGGBase(nn.Module):
     """
@@ -322,7 +324,8 @@ class SSD300(nn.Module):
 
     def __init__(self, n_classes):
         super(SSD300, self).__init__()
-
+        
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.n_classes = n_classes
 
         self.base = VGGBase()
@@ -335,7 +338,7 @@ class SSD300(nn.Module):
         nn.init.constant_(self.rescale_factors, 20)
 
         # Prior boxes
-        self.priors_cxcy = self.create_prior_boxes()
+        self.priors_cxcy = self.create_prior_boxes().to(self.device) 
 
     def forward(self, image):
         """
@@ -411,7 +414,7 @@ class SSD300(nn.Module):
                                 additional_scale = 1.
                             prior_boxes.append([cx, cy, additional_scale, additional_scale])
 
-        prior_boxes = torch.FloatTensor(prior_boxes) # (8732, 4)
+        prior_boxes = torch.FloatTensor(prior_boxes).to(self.device)  # (8732, 4)
         prior_boxes.clamp_(0, 1)  # (8732, 4)
 
         return prior_boxes
@@ -428,6 +431,8 @@ class SSD300(nn.Module):
         :return: detections (boxes, labels, and scores), lists of length batch_size
         """
         batch_size = predicted_locs.size(0)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.priors_cxcy = self.priors_cxcy.to(device)
         n_priors = self.priors_cxcy.size(0)
         predicted_scores = F.softmax(predicted_scores, dim=2)  # (N, 8732, n_classes)
 
@@ -472,7 +477,7 @@ class SSD300(nn.Module):
 
                 # A torch.uint8 (byte) tensor to keep track of which predicted boxes to suppress
                 # 1 implies suppress, 0 implies don't suppress
-                suppress = torch.zeros((n_above_min_score), dtype=torch.bool)  # (n_qualified)
+                suppress = torch.zeros((n_above_min_score), dtype=torch.bool).to(device)   # (n_qualified)
 
                 # Consider each box in order of decreasing scores
                 for box in range(class_decoded_locs.size(0)):
@@ -490,14 +495,14 @@ class SSD300(nn.Module):
 
                 # Store only unsuppressed boxes for this class
                 image_boxes.append(class_decoded_locs[~suppress])
-                image_labels.append(torch.LongTensor((~suppress).sum().item() * [c]))
+                image_labels.append(torch.LongTensor((~suppress).sum().item() * [c]).to(device) )
                 image_scores.append(class_scores[~suppress])
 
             # If no object in any class is found, store a placeholder for 'background'
             if len(image_boxes) == 0:
-                image_boxes.append(torch.FloatTensor([[0., 0., 1., 1.]]))
-                image_labels.append(torch.LongTensor([0]))
-                image_scores.append(torch.FloatTensor([0.]))
+                image_boxes.append(torch.FloatTensor([[0., 0., 1., 1.]]).to(device) )
+                image_labels.append(torch.LongTensor([0]).to(device) )
+                image_scores.append(torch.FloatTensor([0.]).to(device) )
 
             # Concatenate into single tensors
             image_boxes = torch.cat(image_boxes, dim=0)  # (n_objects, 4)

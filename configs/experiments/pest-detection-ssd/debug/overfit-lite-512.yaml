@@ -41,7 +41,7 @@ datamodule:
   dataset:
     _target_: src.data.pest_default_dataset.PestDefaultDataset
     IMG_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/images/"
-    SPLIT_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/trap"
+    SPLIT_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/ssd_splits/"
     BOX_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/annot/"
     VAL_FILE: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/img_val_file.csv"
     label_map:

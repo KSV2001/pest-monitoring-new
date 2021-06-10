@@ -12,8 +12,9 @@ hydra:
 trainer:
   _target_: pytorch_lightning.Trainer
   gpus: 1
-  min_epochs: 1
-  max_epochs: 100
+  max_epochs: 50
+  limit_train_batches: 0.25
+  limit_val_batches: 0.25
   gradient_clip_val: 0.5
   accumulate_grad_batches: 2
   weights_summary: null
@@ -21,16 +22,16 @@ trainer:
 
 model:
   _target_: src.models.ssd.Model
-  min_score: 0.1
-  max_overlap: 0.45
-  top_k: 200
+  min_score: 0.2
+  max_overlap: 0.4
+  top_k: 200 
   network:
     _target_: src.networks.ssd_paper.SSD300
     n_classes: 3
   optimizer:
-    _target_: torch.optim.SGD
-    lr: 0.01
-    momentum: 0.9
+    _target_: torch.optim.Adam
+    lr: 0.0001
+    weight_decay: 0.0005
   loss:
     _target_: src.loss.ssd_loss.MultiBoxLoss
   metric:
@@ -39,7 +40,7 @@ model:
 datamodule:
   _target_: src.data.base_datamodule.BaseDataModule
   num_workers: 10
-  batch_size: 32
+  batch_size: 16
   shuffle: True
   drop_last: True
   pin_memory: True
@@ -58,25 +59,22 @@ datamodule:
           width: 300
           height: 300
         - _target_: src.data.transforms.ToTensor
-        - _target_: src.data.transforms.Normalize
       val:
         - _target_: src.data.transforms.Resize
           width: 300
           height: 300
         - _target_: src.data.transforms.ToTensor
-        - _target_: src.data.transforms.Normalize
       test:
         - _target_: src.data.transforms.Resize
           width: 300
           height: 300
         - _target_: src.data.transforms.ToTensor
-        - _target_: src.data.transforms.Normalize
 
 callbacks:
   model_checkpoint:
     _target_: pytorch_lightning.callbacks.ModelCheckpoint
     monitor: "train/loss"
-    mode: "max"
+    mode: min
     dirpath: "checkpoints/"
     filename: "sample-ssd-pest-{epoch:02d}"
 
