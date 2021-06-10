@@ -70,5 +70,7 @@ class BaseDetectionLoss(nn.Module):
         # avoid no object detected
         total_loss = self.loc_weight * loc_loss + self.conf_weight * conf_loss
         red_loss = self.reduce(total_loss, mask)
+        red_loc_loss = self.reduce(loc_loss, mask)
+        red_conf_loss = self.reduce(conf_loss, mask)
 
-        return red_loss
+        return red_loss, red_loc_loss, red_conf_loss

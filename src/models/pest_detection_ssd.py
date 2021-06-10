@@ -3,6 +3,7 @@ from typing import Any
 import hydra
 import pytorch_lightning as pl
 from omegaconf import DictConfig
+import torch
 from torch.nn import Module
 from torch.optim.optimizer import Optimizer
 
@@ -46,57 +47,44 @@ class Model(pl.LightningModule):
         )
         gloc_anchored, glabel_anchored, glocs, glabels = self.pre_forward_step(glocs, glabels)
         plocs, plabels = self.forward(images)
-        loss = self.criterion(plocs, plabels, gloc_anchored, glabel_anchored)
-        return loss, glocs, glabels, img_ids, plocs, plabels
+        plocs, plabels = plocs.transpose(1, 2), plabels.transpose(1, 2)
+        loss, loc_loss, conf_loss = self.criterion(plocs, plabels, gloc_anchored, glabel_anchored)
+        return {'loss' : loss, 
+                'conf_loss' : conf_loss, 
+                'loc_loss' : loc_loss, 
+                'plocs' : plocs, 
+                'plabels' : plabels, 
+                'glocs' : glocs, 
+                'glabels' : glabels,
+                'img_ids' : img_ids
+                }
 
     def pre_forward_step(self, glocs, glabels):
-        for glabel in glabels:
-            if glabel.numel() > 0:
-                glabel += 1 # Adding 1 to all classes as 0. is background class, specific to SSD
+        glabels = [glabel + 1 for glabel in glabels]
         gloc_anchored, glabel_anchored = self.box_encoder.encode_batch(glocs, glabels)
         gloc_anchored = gloc_anchored.transpose(1, 2).contiguous()
         glabel_anchored = glabel_anchored.long()
         return gloc_anchored, glabel_anchored, glocs, glabels
 
     def training_step(self, batch, batch_idx):
-        loss, glocs, glabels, img_ids, plocs, plabels = self.step(batch)
+        step_output = self.step(batch)
 
-        output = get_metrics(
-            img_ids=img_ids,
-            ploc=plocs.detach().clone(),
-            plabel=plabels.detach().clone(),
-            gloc=glocs,
-            glabel=glabels,
-            img_shape=self.img_shape,
-            nms_threshold=0.5,
-            max_num=200,
-            iou_threshold=0.5,
-            encoder=self.box_encoder,
-        )
-        self.log(
-            "train/mAP", output["mAP"], on_step=False, on_epoch=True, prog_bar=True, logger=True
-        )
-        self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
-
-        # self.log_dict(output, on_step=False, on_epoch=True, logger=True)
-        return loss
+        self.log("train/loss", step_output['loss'], on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log("train/conf_loss", step_output['conf_loss'], on_step=False, on_epoch=True, prog_bar=False, logger=True)
+        self.log("train/loc_loss", step_output['loc_loss'], on_step=False, on_epoch=True, prog_bar=False, logger=True)
+        return step_output['loss']
 
     def validation_step(self, batch, batch_idx):
-        loss, glocs, glabels, img_ids, plocs, plabels = self.step(batch)
-
-        output = get_metrics(
-            img_ids=img_ids,
-            ploc=plocs.detach().clone(),
-            plabel=plabels.detach().clone(),
-            gloc=glocs,
-            glabel=glabels,
-            img_shape=self.img_shape,
-            nms_threshold=0.5,
-            max_num=200,
-            iou_threshold=0.5,
-            encoder=self.box_encoder,
+        step_output = self.step(batch)
+        output = get_metrics(step_output['img_ids'], step_output['plocs'].detach(), step_output['plabels'].detach(),
+                    step_output['glocs'], step_output['glabels'],
+                    nms_threshold = 0.45,
+                    max_num = 200,
+                    iou_threshold = 0.5,
+                    encoder = self.box_encoder,
+                    img_shape = (300, 300)
         )
-        self.log("val/mAP", output["mAP"], on_step=False, on_epoch=True, prog_bar=True, logger=True)
-        # output = self.valid_metrics(out, y)
-        self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
-        # self.log_dict(output, on_step=False, on_epoch=True)
+        self.log("val/loss", step_output['loss'], on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log("val/conf_loss", step_output['conf_loss'], on_step=False, on_epoch=True, prog_bar=False, logger=True)
+        self.log("val/loc_loss", step_output['loc_loss'], on_step=False, on_epoch=True, prog_bar=False, logger=True)
+        self.log("val/mAP", output['mAP'], on_step=False, on_epoch=True, prog_bar=True, logger=True)
