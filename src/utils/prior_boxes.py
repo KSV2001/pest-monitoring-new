@@ -50,21 +50,28 @@ class DefaultBoxes(object):
             return self.dboxes
 
 
-def generate_dboxes(size=300):
-    assert size in [300, 512, 1024], "Size must be one of the following"
-    if size == 300:
+def generate_dboxes(model='ssd'):
+    assert model in ['ssd', 'ssd-512', 'ssd-lite'], "Model must be either ssd, ssd-lite, ssd-512"
+    if model == 'ssd':
         figsize = 300
         feat_size = [38, 19, 10, 5, 3, 1]
         steps = [8, 16, 32, 64, 100, 300]
         scales = [21, 45, 99, 153, 207, 261, 315]
         aspect_ratios = [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
         dboxes = DefaultBoxes(figsize, feat_size, steps, scales, aspect_ratios)
-    elif size == 512: 
+    elif model == 'ssd-512': 
         figsize = 512
         feat_size = [64, 32, 16, 8, 4, 2, 1]
         steps = [8, 16, 32, 64, 128, 256, 512]
         scales = [18, 50, 82, 114, 146, 178, 210, 242]
         aspect_ratios = [[2], [2, 3], [2, 3], [2, 3], [2, 3], [2], [2]]
+        dboxes = DefaultBoxes(figsize, feat_size, steps, scales, aspect_ratios)
+    elif model == 'ssd-lite':
+        figsize = 300
+        feat_size = [19, 10, 5, 3, 2, 1]
+        steps = [16, 32, 64, 100, 150, 300]
+        scales = [60, 105, 150, 195, 240, 285, 330]
+        aspect_ratios = [[2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3]]
         dboxes = DefaultBoxes(figsize, feat_size, steps, scales, aspect_ratios)
     else:
         raise NotImplementedError

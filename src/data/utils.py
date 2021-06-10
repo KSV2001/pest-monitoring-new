@@ -110,7 +110,7 @@ class Encoder(object):
                 continue
 
             score = score.squeeze(1)
-            mask = score > 0.05
+            mask = score > 0.2
 
             bboxes, score = bboxes_in[mask, :], score[mask]
             if score.size(0) == 0:
