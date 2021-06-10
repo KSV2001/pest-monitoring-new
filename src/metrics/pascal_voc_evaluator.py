@@ -417,8 +417,7 @@ def get_metrics(
         # height, width = (300, 300)
         loc, label, prob = [r.detach().cpu().numpy() for r in result]
         for loc_, label_, prob_ in zip(loc, label, prob):
-            pd_boxes.append(
-                BoundingBox(
+            bb_box = BoundingBox(
                     image_name=img_ids[idx],
                     class_id=str(label_),
                     coordinates=(loc_[0], loc_[1], loc_[2], loc_[3]),
@@ -428,7 +427,12 @@ def get_metrics(
                     confidence=prob_,
                     format=BBFormat.XYX2Y2,
                 )
-            )
+            try:
+                area = bb_box.get_area()
+            except:
+                print(f"Bounding Box format was wrong, so skipped it")
+                continue
+            pd_boxes.append(bb_box)
 
         gloc_i = gloc[idx]
         glabel_i = glabel[idx]
@@ -438,15 +442,20 @@ def get_metrics(
 
         gloc_i, glabel_i = gloc_i.detach().cpu().numpy(), glabel_i.detach().cpu().numpy().astype(np.int32)
         for loc_, label_ in zip(gloc_i, glabel_i):
-            gt_boxes.append(
-                BoundingBox(
+            bb_box = BoundingBox(
                     image_name=img_ids[idx],
                     class_id=str(label_),
                     coordinates=(loc_[0], loc_[1], loc_[2], loc_[3]),
                     type_coordinates=CoordinatesType.RELATIVE,
                     img_size=img_shape,
                     bb_type=BBType.GROUND_TRUTH,
-                    format=BBFormat.XYX2Y2)) 
+                    format=BBFormat.XYX2Y2)
+            try:
+                area = bb_box.get_area()
+            except:
+                print(f"Bounding Box format was wrong, so skipped it")
+                continue
+            gt_boxes.append(bb_box) 
 
     # gt_boxes = [BB, BB, BB] pd_boxes = [BB, BB, BB, BB]
     return get_pascalvoc_metrics(gt_boxes,

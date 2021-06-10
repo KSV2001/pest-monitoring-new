@@ -22,7 +22,7 @@ class Model(pl.LightningModule):
     def __init__(self, model_config: DictConfig, **kwargs):
         super().__init__()
         self.model_config = model_config
-        self.dboxes = generate_dboxes(size=self.model_config.img_size)
+        self.dboxes = generate_dboxes(model=self.model_config.prior_boxes)
         self.box_encoder = Encoder(dboxes=self.dboxes)
         self.img_shape = (self.model_config.img_size, self.model_config.img_size)
 
@@ -47,7 +47,6 @@ class Model(pl.LightningModule):
         )
         gloc_anchored, glabel_anchored, glocs, glabels = self.pre_forward_step(glocs, glabels)
         plocs, plabels = self.forward(images)
-        # plocs, plabels = plocs.transpose(1, 2), plabels.transpose(1, 2)
         loss, loc_loss, conf_loss = self.criterion(plocs, plabels, gloc_anchored, glabel_anchored)
         return {'loss' : loss, 
                 'conf_loss' : conf_loss, 
@@ -69,6 +68,13 @@ class Model(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         step_output = self.step(batch)
 
+        if self.model_config.train_metrics:
+            with torch.no_grad():
+                output = get_metrics(step_output['img_ids'], step_output['plocs'].detach().clone(), step_output['plabels'].detach().clone(),
+                            step_output['glocs'], step_output[ 'glabels'], self.img_shape, self.model_config.nms_threshold,
+                            self.model_config.max_num, self.model_config.iou_threshold, self.box_encoder)
+                self.log("train/mAP", output['mAP'], on_step=False, on_epoch=True, prog_bar=False, logger=True)
+        
         self.log("train/loss", step_output['loss'], on_step=False, on_epoch=True, prog_bar=True, logger=True)
         self.log("train/conf_loss", step_output['conf_loss'], on_step=False, on_epoch=True, prog_bar=False, logger=True)
         self.log("train/loc_loss", step_output['loc_loss'], on_step=False, on_epoch=True, prog_bar=False, logger=True)
@@ -76,7 +82,14 @@ class Model(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         step_output = self.step(batch)
+                
+        if self.model_config.val_metrics:
+            output = get_metrics(step_output['img_ids'], step_output['plocs'], step_output['plabels'], step_output['glocs'], 
+                        step_output[ 'glabels'], self.img_shape, self.model_config.nms_threshold,
+                        self.model_config.max_num, self.model_config.iou_threshold, self.box_encoder)
+            self.log("val/mAP", output['mAP'], on_step=False, on_epoch=True, prog_bar=False, logger=True)                        
 
         self.log("val/loss", step_output['loss'], on_step=False, on_epoch=True, prog_bar=True, logger=True)
         self.log("val/conf_loss", step_output['conf_loss'], on_step=False, on_epoch=True, prog_bar=False, logger=True)
         self.log("val/loc_loss", step_output['loc_loss'], on_step=False, on_epoch=True, prog_bar=False, logger=True)
+        

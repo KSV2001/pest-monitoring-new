@@ -1,0 +1,88 @@
+# @package _global_
+
+# to execute this experiment run:
+# python run.py experiment=default.yaml
+
+seed: 12345
+
+hydra:
+  run:
+    dir: /output/${hydra.job.config_name}
+
+trainer:
+  _target_: pytorch_lightning.Trainer
+  gpus: 1
+  max_epochs: 50
+  gradient_clip_val: 0.5
+  accumulate_grad_batches: 2
+  weights_summary: null
+  profiler: simple
+
+model:
+  _target_: src.models.ssd_nvidia.Model
+  img_size: 300
+  prior_boxes: ssd-lite  
+  nms_threshold: 0.4
+  iou_threshold: 0.5
+  max_num: 200
+  train_metrics: False
+  val_metrics: True
+  network:
+    _target_: src.networks.ssd.SSDLite
+    num_classes: 3
+  optimizer:
+    _target_: torch.optim.Adam
+    lr: 0.0001
+    weight_decay: 0.0005
+  loss:
+    _target_: src.loss.base_detection_loss.BaseDetectionLoss
+  metric:
+    _target_: src.metrics_.ObjectDetectionMetrics
+
+datamodule:
+  _target_: src.data.base_datamodule.BaseDataModule
+  num_workers: 10
+  batch_size: 16
+  shuffle: True
+  drop_last: True
+  pin_memory: True
+  dataset:
+    _target_: src.data.pest_default_dataset.PestDefaultDataset
+    IMG_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/images/"
+    SPLIT_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/ssd_splits/"
+    BOX_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/annot/"
+    VAL_FILE: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/img_val_file.csv"
+    label_map:
+      trap: 0
+      non_trap: 1
+    transforms:
+      train:
+        - _target_: src.data.transforms.Resize
+          width: 300
+          height: 300
+        - _target_: src.data.transforms.ToTensor
+      val:
+        - _target_: src.data.transforms.Resize
+          width: 300
+          height: 300
+        - _target_: src.data.transforms.ToTensor
+      test:
+        - _target_: src.data.transforms.Resize
+          width: 300
+          height: 300
+        - _target_: src.data.transforms.ToTensor
+
+callbacks:
+  model_checkpoint:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    monitor: "train/loss"
+    mode: min
+    dirpath: "checkpoints/"
+    filename: "sample-ssd-pest-{epoch:02d}"
+
+logger:
+  wandb:
+    _target_: pytorch_lightning.loggers.wandb.WandbLogger
+    project: "pest-monitoring-new"
+    notes: "Description of this model."
+    save_dir: "/output/"
