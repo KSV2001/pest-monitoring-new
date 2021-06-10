@@ -6,7 +6,7 @@ from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 
 from .base_collate import default_collate
-from .transforms import Compose, Permute, Resize, ToTensor
+from .transforms import Compose, Resize, ToTensor
 
 
 class BaseDataModule(LightningDataModule):
@@ -154,7 +154,6 @@ class BaseDataModule(LightningDataModule):
         return Compose(
             [
                 Resize(),
-                Permute(),
                 ToTensor(),
             ]
         )

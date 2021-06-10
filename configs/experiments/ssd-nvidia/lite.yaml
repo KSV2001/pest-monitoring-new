@@ -60,16 +60,19 @@ datamodule:
         - _target_: src.data.transforms.Resize
           width: 300
           height: 300
+        - _target_: src.data.transforms.Normalize        
         - _target_: src.data.transforms.ToTensor
       val:
         - _target_: src.data.transforms.Resize
           width: 300
           height: 300
+        - _target_: src.data.transforms.Normalize        
         - _target_: src.data.transforms.ToTensor
       test:
         - _target_: src.data.transforms.Resize
           width: 300
           height: 300
+        - _target_: src.data.transforms.Normalize        
         - _target_: src.data.transforms.ToTensor
 
 callbacks:

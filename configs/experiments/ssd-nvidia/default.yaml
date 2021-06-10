@@ -16,11 +16,12 @@ trainer:
   gradient_clip_val: 0.5
   accumulate_grad_batches: 2
   weights_summary: null
-  profiler: simpledd
+  profiler: simple
 
 model:
   _target_: src.models.ssd_nvidia.Model
   img_size: 300
+  prior_boxes: ssd
   nms_threshold: 0.45
   train_metrics: False
   val_metrics: False  
@@ -60,16 +61,19 @@ datamodule:
         - _target_: src.data.transforms.Resize
           width: 300
           height: 300
+        - _target_: src.data.transforms.Normalize        
         - _target_: src.data.transforms.ToTensor
       val:
         - _target_: src.data.transforms.Resize
           width: 300
           height: 300
+        - _target_: src.data.transforms.Normalize        
         - _target_: src.data.transforms.ToTensor
       test:
         - _target_: src.data.transforms.Resize
           width: 300
           height: 300
+        - _target_: src.data.transforms.Normalize        
         - _target_: src.data.transforms.ToTensor
 
 callbacks:
