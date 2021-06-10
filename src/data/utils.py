@@ -1,27 +1,28 @@
-import numpy as np
 import itertools
 from math import sqrt
 
+import numpy as np
 import torch
 import torch.nn.functional as F
-from torchvision.ops.boxes import box_iou, box_convert
+from torchvision.ops.boxes import box_convert, box_iou
+
 
 class Encoder(object):
     """
-        Inspired by https://github.com/kuangliu/pytorch-src
-        Transform between (bboxes, labels) <-> SSD output
-        dboxes: default boxes in size 8732 x 4,
-            encoder: input ltrb format, output xywh format
-            decoder: input xywh format, output ltrb format
-        encode:
-            input  : bboxes_in (Tensor nboxes x 4), labels_in (Tensor nboxes)
-            output : bboxes_out (Tensor 8732 x 4), labels_out (Tensor 8732)
-            criteria : IoU threshold of bboexes
-        decode:
-            input  : bboxes_in (Tensor 8732 x 4), scores_in (Tensor 8732 x nitems)
-            output : bboxes_out (Tensor nboxes x 4), labels_out (Tensor nboxes)
-            criteria : IoU threshold of bboexes
-            max_output : maximum number of output bboxes
+    Inspired by https://github.com/kuangliu/pytorch-src
+    Transform between (bboxes, labels) <-> SSD output
+    dboxes: default boxes in size 8732 x 4,
+        encoder: input ltrb format, output xywh format
+        decoder: input xywh format, output ltrb format
+    encode:
+        input  : bboxes_in (Tensor nboxes x 4), labels_in (Tensor nboxes)
+        output : bboxes_out (Tensor 8732 x 4), labels_out (Tensor 8732)
+        criteria : IoU threshold of bboexes
+    decode:
+        input  : bboxes_in (Tensor 8732 x 4), scores_in (Tensor 8732 x nitems)
+        output : bboxes_out (Tensor nboxes x 4), labels_out (Tensor nboxes)
+        criteria : IoU threshold of bboexes
+        max_output : maximum number of output bboxes
     """
 
     def __init__(self, dboxes):
@@ -38,13 +39,13 @@ class Encoder(object):
 
         # set best ious 2.0
         best_dbox_ious.index_fill_(0, best_bbox_idx, 2.0)
-
-        idx = torch.arange(0, best_bbox_idx.size(0), dtype=torch.int64)
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        idx = torch.arange(0, best_bbox_idx.size(0), dtype=torch.int64).to(device)
         best_dbox_idx[best_bbox_idx[idx]] = idx
 
         # filter IoU > 0.5
         masks = best_dbox_ious > criteria
-        labels_out = torch.zeros(self.nboxes, dtype=torch.float)
+        labels_out = torch.zeros(self.nboxes, dtype=torch.float).to(device)
         labels_out[masks] = labels_in[best_dbox_idx[masks]]
         bboxes_out = self.dboxes.clone()
         bboxes_out[masks, :] = bboxes_in[best_dbox_idx[masks], :]
@@ -52,7 +53,8 @@ class Encoder(object):
         return bboxes_out, labels_out
 
     def encode_batch(self, bboxes_in_batch, labels_in_batch, criteria=0.5):
-        bboxes_out_batch, labels_out_batch = [], []   
+        self.move_to_correct_device()
+        bboxes_out_batch, labels_out_batch = [], []
         for bboxes_in, labels_in in zip(bboxes_in_batch, labels_in_batch):
             if labels_in.numel() != 0:
                 bboxes_out, labels_out = self.encode(bboxes_in, labels_in)
@@ -68,8 +70,8 @@ class Encoder(object):
 
     def scale_back_batch(self, bboxes_in, scores_in):
         """
-            Do scale and transform from xywh to ltrb
-            suppose input Nx4xnum_bbox Nxlabel_numxnum_bbox
+        Do scale and transform from xywh to ltrb
+        suppose input Nx4xnum_bbox Nxlabel_numxnum_bbox
         """
         self.dboxes = self.dboxes
         self.dboxes_xywh = self.dboxes_xywh
@@ -80,13 +82,16 @@ class Encoder(object):
         bboxes_in[:, :, :2] = self.scale_xy * bboxes_in[:, :, :2]
         bboxes_in[:, :, 2:] = self.scale_wh * bboxes_in[:, :, 2:]
 
-        bboxes_in[:, :, :2] = bboxes_in[:, :, :2] * self.dboxes_xywh[:, :, 2:] + self.dboxes_xywh[:, :, :2]
+        bboxes_in[:, :, :2] = (
+            bboxes_in[:, :, :2] * self.dboxes_xywh[:, :, 2:] + self.dboxes_xywh[:, :, :2]
+        )
         bboxes_in[:, :, 2:] = bboxes_in[:, :, 2:].exp() * self.dboxes_xywh[:, :, 2:]
         bboxes_in = box_convert(bboxes_in, in_fmt="cxcywh", out_fmt="xyxy")
 
         return bboxes_in, F.softmax(scores_in, dim=-1)
 
     def decode_batch(self, bboxes_in, scores_in, nms_threshold=0.45, max_output=200):
+        self.move_to_correct_device()
         bboxes, probs = self.scale_back_batch(bboxes_in, scores_in)
         output = []
         for bbox, prob in zip(bboxes.split(1, 0), probs.split(1, 0)):
@@ -105,10 +110,11 @@ class Encoder(object):
                 continue
 
             score = score.squeeze(1)
-            mask = score > 0.05
+            mask = score > 0.2
 
             bboxes, score = bboxes_in[mask, :], score[mask]
-            if score.size(0) == 0: continue
+            if score.size(0) == 0:
+                continue
 
             score_sorted, score_idx_sorted = score.sort(dim=0)
 
@@ -132,16 +138,29 @@ class Encoder(object):
         if not bboxes_out:
             return [torch.tensor([]) for _ in range(3)]
 
-        bboxes_out, labels_out, scores_out = torch.cat(bboxes_out, dim=0), \
-                                             torch.tensor(labels_out, dtype=torch.long), \
-                                             torch.cat(scores_out, dim=0)
+        bboxes_out, labels_out, scores_out = (
+            torch.cat(bboxes_out, dim=0),
+            torch.tensor(labels_out, dtype=torch.long),
+            torch.cat(scores_out, dim=0),
+        )
 
         _, max_ids = scores_out.sort(dim=0)
         max_ids = max_ids[-max_output:]
         return bboxes_out[max_ids, :], labels_out[max_ids], scores_out[max_ids]
+    
+    def move_to_correct_device(self):
+        if torch.cuda.is_available():
+            self.dboxes = self.dboxes.to('cuda')
+            self.dboxes_xywh = self.dboxes_xywh.to('cuda')
+        else:
+            self.dboxes = self.dboxes.to('cpu')
+            self.dboxes_xywh = self.dboxes_xywh.to('cpu')
+
 
 class DefaultBoxes(object):
-    def __init__(self, fig_size, feat_size, steps, scales, aspect_ratios, scale_xy=0.1, scale_wh=0.2):
+    def __init__(
+        self, fig_size, feat_size, steps, scales, aspect_ratios, scale_xy=0.1, scale_wh=0.2
+    ):
 
         self.feat_size = feat_size
         self.fig_size = fig_size
@@ -182,6 +201,7 @@ class DefaultBoxes(object):
         else:  # order == "xywh"
             return self.dboxes
 
+
 def generate_dboxes(model="ssd"):
     if model == "ssd":
         figsize = 300
@@ -195,6 +215,6 @@ def generate_dboxes(model="ssd"):
         feat_size = [19, 10, 5, 3, 2, 1]
         steps = [16, 32, 64, 100, 150, 300]
         scales = [60, 105, 150, 195, 240, 285, 330]
-        aspect_ratios = [[2,3], [2, 3], [2, 3], [2, 3], [2,3], [2,3]]
+        aspect_ratios = [[2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3]]
         dboxes = DefaultBoxes(figsize, feat_size, steps, scales, aspect_ratios)
     return dboxes

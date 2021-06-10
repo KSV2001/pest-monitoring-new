@@ -1,22 +1,26 @@
 # @package _global_
 
 # to execute this experiment run:
-# python run.py experiment=default.yaml
+# python run.py --config-name=default.yaml
+
+defaults:
+  - hydra: default.yaml
 
 seed: 12345
 
-hydra:
-  run:
-    dir: /output/${hydra.job.config_name}_${now:%m-%d_%H-%M}
-
 trainer:
   _target_: pytorch_lightning.Trainer
-  gpus: 0
+  gpus: 1
   min_epochs: 1
   max_epochs: 10
   gradient_clip_val: 0.5
   accumulate_grad_batches: 2
   weights_summary: null
+  # Debug parameters
+  # fast_dev_run: True
+  # overfit_batches: 3
+  # profiler
+  # profiler: 'simple'
 
 model:
   _target_: src.models.base.Model

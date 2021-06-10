@@ -14,15 +14,13 @@ trainer:
   gpus: 0
   min_epochs: 1
   max_epochs: 10
-  limit_train_batches: 0.05
-  limit_val_batches: 0.1  
   gradient_clip_val: 0.5
   accumulate_grad_batches: 2
   weights_summary: null
 
 model:
   _target_: src.models.pest_detection_ssd.Model
-  type: "ssd-lite"
+  img_size: 300
   network:
     _target_: src.networks.ssd.SSDLite
     num_classes: 3
@@ -44,31 +42,31 @@ datamodule:
   dataset:
     _target_: src.data.pest_default_dataset.PestDefaultDataset
     IMG_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/images/"
-    SPLIT_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/"
+    SPLIT_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/ssd_splits/"
     BOX_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/annot/"
     VAL_FILE: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/img_val_file.csv"
-    label_map: 
+    label_map:
       trap: 0
       non_trap: 1
     transforms:
       train:
         - _target_: src.data.transforms.Resize
           width: 300
-          height: 300           
-        - _target_: src.data.transforms.ToTensor            
-        - _target_: src.data.transforms.Normalize        
+          height: 300
+        - _target_: src.data.transforms.ToTensor
+        - _target_: src.data.transforms.Normalize
       val:
         - _target_: src.data.transforms.Resize
           width: 300
-          height: 300           
-        - _target_: src.data.transforms.ToTensor           
-        - _target_: src.data.transforms.Normalize          
+          height: 300
+        - _target_: src.data.transforms.ToTensor
+        - _target_: src.data.transforms.Normalize
       test:
         - _target_: src.data.transforms.Resize
           width: 300
-          height: 300      
-        - _target_: src.data.transforms.ToTensor                 
-        - _target_: src.data.transforms.Normalize   
+          height: 300
+        - _target_: src.data.transforms.ToTensor
+        - _target_: src.data.transforms.Normalize
 
 callbacks:
   model_checkpoint:

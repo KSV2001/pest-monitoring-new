@@ -1,5 +1,5 @@
 # build the image required for setting up the repository
-# Example run: 
+# Example run:
 # $ docker build -t wadhwaniai/pest-monitoring-detectron2:v0 .
 # Creates a docker image with desired dependencies
 
@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 RUN ln -sv /usr/bin/python3 /usr/bin/python
 
 # extra line
-WORKDIR / 
+WORKDIR /
 ENV PATH="/root/.local/bin:${PATH}"
 RUN wget https://bootstrap.pypa.io/get-pip.py && \
 	python3 get-pip.py --user && \
@@ -24,7 +24,7 @@ RUN pip install --user torch==1.8 torchvision==0.9 -f https://download.pytorch.o
 
 RUN pip install --user 'git+https://github.com/facebookresearch/fvcore'
 # install detectron2
-# RUN git clone https://github.com/facebookresearch/detectron2 detectron2 
+# RUN git clone https://github.com/facebookresearch/detectron2 detectron2
 
 # set FORCE_CUDA because during `docker build` cuda is not accessible
 ENV FORCE_CUDA="1"
@@ -46,5 +46,3 @@ ENV PYTHONPATH /workspace/pest-monitoring-new
 COPY requirements.txt /tmp/
 RUN pip install --requirement /tmp/requirements.txt
 COPY . /tmp/
-
-

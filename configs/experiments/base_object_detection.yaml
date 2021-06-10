@@ -49,13 +49,13 @@ datamodule:
     SPLIT_FILE: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/"
     BOX_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/annot/"
     VAL_FILE: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/img_val_file.csv"
-    label_map: 
+    label_map:
       trap: 0
       non_trap: 1
-    transforms: 
+    transforms:
       train: null
       val: null
-      test: null  
+      test: null
 
 callbacks:
   model_checkpoint:

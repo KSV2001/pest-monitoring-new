@@ -1,12 +1,11 @@
-import cv2
-import numpy as np
 import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
-class Compose():
+
+class Compose:
     """Composes several transforms together.
     Args:
         transforms: list, list of transforms to use.
@@ -22,7 +21,9 @@ class Compose():
 
     def __call__(self, img, bbox_coord=None, bbox_class=None, val_class=None):
         for transform in self.transforms:
-            img, bbox_coord, bbox_class, val_class = transform(img, bbox_coord, bbox_class, val_class)
+            img, bbox_coord, bbox_class, val_class = transform(
+                img, bbox_coord, bbox_class, val_class
+            )
         return img, bbox_coord, bbox_class, val_class
 
 class baseAugmentation():
@@ -33,7 +34,7 @@ class baseAugmentation():
         transformed_img = self.transform(image=img)['image']
         return transformed_img, bbox_coord, bbox_class, val_class
 
-class ToTensor():
+class ToTensor:
     def __call__(self, img, bbox_coord=None, bbox_class=None, val_class=None):
         transform = ToTensorV2()
         transformed_img = transform(image=img)['image']
@@ -49,6 +50,7 @@ class Resize(baseAugmentation):
 
 class Normalize(baseAugmentation):
     """Normalizes images"""
+
     def __init__(self, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
         self.transform = A.Normalize(mean=mean, std=std)
 
@@ -97,3 +99,4 @@ class VerticalFlip():
 #     """Permutes images"""
 #     def __call__(self, img, bbox_coord=None, bbox_class=None, val_class=None):
 #         return img.permute(2, 0, 1), bbox_coord, bbox_class, val_class
+

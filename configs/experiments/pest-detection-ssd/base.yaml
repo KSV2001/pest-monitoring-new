@@ -11,18 +11,16 @@ hydra:
 
 trainer:
   _target_: pytorch_lightning.Trainer
-  gpus: 0
+  gpus: 1
   min_epochs: 1
   max_epochs: 10
-  limit_train_batches: 0.05
-  limit_val_batches: 0.1  
   gradient_clip_val: 0.5
   accumulate_grad_batches: 2
   weights_summary: null
 
 model:
   _target_: src.models.pest_detection_ssd.Model
-  type: "ssd"
+  img_size: 300
   network:
     _target_: src.networks.ssd.SSD
     num_classes: 3
@@ -44,10 +42,10 @@ datamodule:
   dataset:
     _target_: src.data.pest_default_dataset.PestDefaultDataset
     IMG_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/images/"
-    SPLIT_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/trap/"
+    SPLIT_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/ssd_splits/"
     BOX_DIR: "/scratchh/home/anmol/cotton-data/splits/gold/annot/"
     VAL_FILE: "/scratchh/home/anmol/cotton-data/splits/gold/split_v2/img_val_file.csv"
-    label_map: 
+    label_map:
       trap: 0
       non_trap: 1
     transforms:
@@ -55,14 +53,17 @@ datamodule:
         - _target_: src.data.transforms.Resize
           width: 300
           height: 300
+
         - _target_: src.data.transforms.Normalize        
         - _target_: src.data.transforms.ToTensor            
+
       val:
         - _target_: src.data.transforms.Resize
           width: 300
           height: 300
         - _target_: src.data.transforms.Normalize        
         - _target_: src.data.transforms.ToTensor            
+
       test:
         - _target_: src.data.transforms.Resize
           width: 300

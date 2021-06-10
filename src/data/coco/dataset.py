@@ -1,39 +1,36 @@
-import torch
-from torch.utils.data import Dataset
-import json
 import os
 from os.path import join
+from typing import Any, List
+
+import torch
 from PIL import Image
 from pycocotools.coco import COCO
-from torchvision.datasets import CocoDetection
-import numpy as np
-import torchvision
+from torch.utils.data import Dataset
 from torch.utils.data.dataloader import default_collate
-from PIL import Image
-from typing import Any, Callable, Optional, Tuple, List
+
 
 class COCODataset(Dataset):
     """
     A PyTorch Dataset class to be used in a PyTorch DataLoader to create batches.
     """
 
-    def __init__(self, root, split = 'train', version = '2014', transform=None):
+    def __init__(self, root, split="train", version="2014", transform=None):
         """
         :param image_dir: folder where data files are stored
         :param annotations_dir: folder where annotation files corresponding to splits are stored
-        :param split: 
+        :param split:
         :param split: split, one of 'train' or 'val' or 'test'
         """
-        assert split in {'train', 'val', 'test'}
+        assert split in {"train", "val", "test"}
         self.root = os.path.join(root, split)
         self.version = version
         self.split = split
-        
+
         # Load coco object using pycoco
-        if split == 'test':
-            self.coco = COCO(join(root, 'annotations', f'image_info_test{version}.json'))
+        if split == "test":
+            self.coco = COCO(join(root, "annotations", f"image_info_test{version}.json"))
         else:
-            self.coco = COCO(join(root, 'annotations', f'instances_{split}{version}.json'))
+            self.coco = COCO(join(root, "annotations", f"instances_{split}{version}.json"))
         self.ids = list(sorted(self.coco.imgs.keys()))
         self._load_categories()
         self.transform = transform
@@ -74,12 +71,19 @@ class COCODataset(Dataset):
         labels = []
         for annotation in target:
             bbox = annotation.get("bbox")
-            boxes.append([bbox[0] / width, bbox[1] / height, (bbox[0] + bbox[2]) / width, (bbox[1] + bbox[3]) / height])
+            boxes.append(
+                [
+                    bbox[0] / width,
+                    bbox[1] / height,
+                    (bbox[0] + bbox[2]) / width,
+                    (bbox[1] + bbox[3]) / height,
+                ]
+            )
             labels.append(self.label_map[annotation.get("category_id")])
 
         boxes = torch.tensor(boxes)
         labels = torch.tensor(labels)
-        
+
         if self.transform is not None:
             image, boxes, labels = self.transform(image, boxes, labels)
 
@@ -92,6 +96,6 @@ class COCODataset(Dataset):
         items = list(zip(*batch))
         items[0] = default_collate([i for i in items[0] if torch.is_tensor(i)])
         items[1] = default_collate([i for i in items[1] if torch.is_tensor(i)])
-        items[2] = default_collate([i for i in items[2] if torch.is_tensor(i)])    
-        
+        items[2] = default_collate([i for i in items[2] if torch.is_tensor(i)])
+
         return items
